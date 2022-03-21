@@ -1,0 +1,34 @@
+# Copyright 2022 Chainguard, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: opener
+spec:
+  template:
+    spec:
+      containers:
+      - image: ko://chainguard.dev/demos/github-issue-opener/cmd/app
+        env:
+        - name: ISSUER_URL
+          # Change this to the issuer of the Chainguard environment
+          # we want to test against.
+          value: http://issuer.oidc-system.svc
+        - name: GROUP
+          # Change this to the IAM group with which this webhook is
+          # associated.
+          value: e97622b20fb99bd935ad7f5d7b9fd4cc6d46b9b7
+        - name: GITHUB_ORG
+          # Change this to the Github org (or user) hosting the
+          # repository in which to file issues.
+          value: mattmoor
+        - name: GITHUB_REPO
+          # Change this to the Github repository in which to file issues.
+          value: eks-demo
+
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: pat
