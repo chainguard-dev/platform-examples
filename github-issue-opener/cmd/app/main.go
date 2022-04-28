@@ -21,7 +21,7 @@ import (
 	"knative.dev/pkg/ptr"
 
 	"chainguard.dev/api/pkg/events"
-	"chainguard.dev/api/proto/platform/iam"
+	"chainguard.dev/api/pkg/events/policy"
 )
 
 type envConfig struct {
@@ -85,15 +85,11 @@ func main() {
 		}
 
 		// We are handling a specific event type, so filter the rest.
-		// TODO: Replace this with whatever type we use for Continuous
-		// Verification policy violations.
-		if event.Type() != "dev.chainguard.api.iam.group_invite.created.v1" {
+		if event.Type() != "dev.chainguard.policy.validation.changed.v1" {
 			return nil
 		}
 
-		// TODO: Replace this with whatever type we use for Continuous
-		// Verification policy violations.
-		body := &iam.GroupInvite{}
+		body := &policy.ImagePolicyRecord{}
 		data := events.Occurrence{
 			Body: body,
 		}
@@ -102,17 +98,28 @@ func main() {
 			return fmt.Errorf("unable to unmarshal data: %w", err)
 		}
 
-		issue, _, err := client.Issues.Create(ctx, env.GithubOrg, env.GithubRepo, &github.IssueRequest{
-			// TODO: Replace this with an issue title/body based on the
-			// Continuous Verification payload, once we have it.
-			Title: ptr.String("This is the title"),
-			Body:  ptr.String(fmt.Sprintf("This is the body %s", body.Id)),
-		})
-		if err != nil {
-			return err
+		for name, pol := range body.Policies {
+			if pol.Valid {
+				// Not in violation of policy
+				continue
+			}
+			switch pol.Change {
+			case policy.ImprovedChange:
+				// TODO: How is this an improvement?
+				continue
+			case policy.NewChange, policy.DegradedChange:
+				// We want to fire on these events.
+			}
+			issue, _, err := client.Issues.Create(ctx, env.GithubOrg, env.GithubRepo, &github.IssueRequest{
+				Title: ptr.String(fmt.Sprintf("Policy %s failed", name)),
+				Body:  ptr.String(fmt.Sprintf("Image: `%s`\nCluster `%s`\nPolicy: `%s`\nLast Checked: `%v`", body.ImageID, body.ClusterID, name, pol.LastChecked.Time)),
+			})
+			if err != nil {
+				return err
+			}
+			log.Printf("Opened issue: %d", issue.GetNumber())
 		}
 
-		log.Printf("Opened issue: %d", issue.GetNumber())
 		return nil
 	}
 
