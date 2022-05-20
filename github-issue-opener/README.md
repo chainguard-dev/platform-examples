@@ -80,7 +80,7 @@ Next, apply a policy to your cluster:
 
 ```yaml
 # kubectl apply this!
-apiVersion: cosigned.sigstore.dev/v1alpha1
+apiVersion: policy.sigstore.dev/v1alpha1
 kind: ClusterImagePolicy
 metadata:
   name: github-test
