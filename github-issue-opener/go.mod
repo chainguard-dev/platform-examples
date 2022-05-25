@@ -10,7 +10,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	knative.dev/pkg v0.0.0-20220329144915-0a1ec2e0d46c
 )
 
@@ -24,8 +24,8 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
