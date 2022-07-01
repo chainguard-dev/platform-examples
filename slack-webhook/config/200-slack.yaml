@@ -1,0 +1,26 @@
+# Copyright 2022 Chainguard, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: slack
+spec:
+  template:
+    spec:
+      containers:
+      - image: ko://chainguard.dev/demos/slack-webhook/cmd/app
+        env:
+        - name: ISSUER_URL
+          # Change this to the issuer of the Chainguard environment
+          # we want to test against.
+          value: http://issuer.oidc-system.svc
+        - name: GROUP
+          # Change this to the IAM group with which the chainguard subscription
+          # webhook is associated.
+          value: subscription/group/id
+        - name: SLACK_WEBHOOK
+          valueFrom:
+            secretKeyRef:
+              name: slack
+              key: webhook

@@ -12,25 +12,20 @@ import (
 	"net/http"
 	"strings"
 
+	"chainguard.dev/api/pkg/events"
+	"chainguard.dev/api/pkg/events/policy"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/google/go-github/v43/github"
 	"github.com/kelseyhightower/envconfig"
-	"golang.org/x/oauth2"
-	"knative.dev/pkg/ptr"
-
-	"chainguard.dev/api/pkg/events"
-	"chainguard.dev/api/pkg/events/policy"
+	"github.com/slack-go/slack"
 )
 
 type envConfig struct {
-	Issuer      string `envconfig:"ISSUER_URL" required:"true"`
-	Group       string `envconfig:"GROUP" required:"true"`
-	Port        int    `envconfig:"PORT" default:"8080" required:"true"`
-	GithubOrg   string `envconfig:"GITHUB_ORG" required:"true"`
-	GithubRepo  string `envconfig:"GITHUB_Repo" required:"true"`
-	GithubToken string `envconfig:"GITHUB_TOKEN" required:"true"`
+	Issuer       string `envconfig:"ISSUER_URL" required:"true"`
+	Group        string `envconfig:"GROUP" required:"true"`
+	Port         int    `envconfig:"PORT" default:"8080" required:"true"`
+	SlackWebhook string `envconfig:"SLACK_WEBHOOK" required:"true"`
 }
 
 func main() {
@@ -57,13 +52,6 @@ func main() {
 		ClientID: "customer",
 	})
 
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: env.GithubToken},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
-
 	receiver := func(ctx context.Context, event cloudevents.Event) error {
 		// We expect Chainguard webhooks to pass an Authorization header.
 		auth := strings.TrimPrefix(cehttp.RequestDataFromContext(ctx).Header.Get("Authorization"), "Bearer ")
@@ -86,33 +74,17 @@ func main() {
 		}
 
 		body := &policy.ImagePolicyRecord{}
-		data := events.Occurrence{
+		occ := events.Occurrence{
 			Body: body,
 		}
-		if err := event.DataAs(&data); err != nil {
+		if err := event.DataAs(&occ); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
-		for name, pol := range body.Policies {
-			if pol.Valid {
-				// Not in violation of policy
-				continue
+		if msg := imagePolicyRecordToWebhookMessage(event, body); msg != nil {
+			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
+				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
 			}
-			switch pol.Change {
-			case policy.ImprovedChange:
-				// TODO: How is this an improvement?
-				continue
-			case policy.NewChange, policy.DegradedChange:
-				// We want to fire on these events.
-			}
-			issue, _, err := client.Issues.Create(ctx, env.GithubOrg, env.GithubRepo, &github.IssueRequest{
-				Title: ptr.String(fmt.Sprintf("Policy %s failed", name)),
-				Body:  ptr.String(fmt.Sprintf("Image: `%s`\nCluster `%s`\nPolicy: `%s`\nLast Checked: `%v`", body.ImageID, body.ClusterID, name, pol.LastChecked.Time)),
-			})
-			if err != nil {
-				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to create GitHub issue: %w", err)
-			}
-			log.Printf("Opened issue: %d", issue.GetNumber())
 		}
 
 		return nil
@@ -128,5 +100,61 @@ func main() {
 		return err
 	}); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func imagePolicyRecordToWebhookMessage(event cloudevents.Event, ipr *policy.ImagePolicyRecord) *slack.WebhookMessage {
+	divSection := slack.NewDividerBlock()
+
+	// Header Section
+	headerText := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Policy Alert* from _%s_ related to image %s:", event.Source(), event.Subject()), false, false)
+	headerSection := slack.NewSectionBlock(headerText, nil, nil)
+
+	blocks := &slack.Blocks{
+		BlockSet: []slack.Block{
+			headerSection,
+		},
+	}
+
+	out := 0
+	for name, state := range ipr.Policies {
+		var valid string
+		var emoji string
+		if state.Valid {
+			valid = "passing"
+		} else {
+			valid = "failing"
+		}
+		var stateText *slack.TextBlockObject
+		switch state.Change {
+		case policy.NewChange:
+			if state.Valid {
+				emoji = ":star:"
+			} else {
+				emoji = ":x:"
+			}
+			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Policy _%s_ now applies and is *%s*", emoji, name, name, valid), false, false)
+		case policy.DegradedChange:
+			emoji = ":fire:"
+			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Degraded change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid), false, false)
+		case policy.ImprovedChange:
+			emoji = ":star-struck:"
+			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Improved change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid), false, false)
+		default:
+			// No change, don't report.
+			continue
+		}
+
+		blocks.BlockSet = append(blocks.BlockSet, slack.NewSectionBlock(stateText, nil, nil))
+		out++
+	}
+
+	// If we did not add any blocks, don't return the webhook message.
+	if out == 0 {
+		return nil
+	}
+	blocks.BlockSet = append(blocks.BlockSet, divSection)
+	return &slack.WebhookMessage{
+		Blocks: blocks,
 	}
 }
