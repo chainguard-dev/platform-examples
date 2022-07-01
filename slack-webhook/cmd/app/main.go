@@ -22,6 +22,7 @@ import (
 )
 
 type envConfig struct {
+	Console      string `envconfig:"CONSOLE_URL" required:"true"`
 	Issuer       string `envconfig:"ISSUER_URL" required:"true"`
 	Group        string `envconfig:"GROUP" required:"true"`
 	Port         int    `envconfig:"PORT" default:"8080" required:"true"`
@@ -81,7 +82,7 @@ func main() {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
-		if msg := imagePolicyRecordToWebhookMessage(event, body); msg != nil {
+		if msg := env.imagePolicyRecordToWebhookMessage(body); msg != nil {
 			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
 			}
@@ -103,11 +104,13 @@ func main() {
 	}
 }
 
-func imagePolicyRecordToWebhookMessage(event cloudevents.Event, ipr *policy.ImagePolicyRecord) *slack.WebhookMessage {
+func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr *policy.ImagePolicyRecord) *slack.WebhookMessage {
 	divSection := slack.NewDividerBlock()
 
 	// Header Section
-	headerText := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Policy Alert* from _%s_ related to image %s:", event.Source(), event.Subject()), false, false)
+	headerText := slack.NewTextBlockObject("mrkdwn",
+		fmt.Sprintf("*Policy Alert* from _<%s/clusters/%s|%s>_ related to image %s:", e.Console, ipr.ClusterID, ipr.ClusterID, ipr.ImageID),
+		false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	blocks := &slack.Blocks{

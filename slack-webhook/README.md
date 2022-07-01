@@ -27,6 +27,10 @@ Next, update `config/200-slack.yaml` to replace the following values as
 documented:
 
 ```yaml
+- name: CONSOLE_URL
+  # Change this to the Console URL of the Chainguard environment
+  # we want to test against.
+  value: http://console.console-system.svc
 - name: ISSUER_URL
   # Change this to the issuer of the Chainguard environment
   # we want to test against.
