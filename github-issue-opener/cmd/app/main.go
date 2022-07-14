@@ -58,7 +58,7 @@ func main() {
 	})
 
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: env.GithubToken},
+		&oauth2.Token{AccessToken: strings.TrimSpace(env.GithubToken)},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
