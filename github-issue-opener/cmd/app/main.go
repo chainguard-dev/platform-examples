@@ -107,7 +107,7 @@ func main() {
 			}
 			issue, _, err := client.Issues.Create(ctx, env.GithubOrg, env.GithubRepo, &github.IssueRequest{
 				Title: ptr.String(fmt.Sprintf("Policy %s failed", name)),
-				Body:  ptr.String(fmt.Sprintf("Image: `%s`\nCluster `%s`\nPolicy: `%s`\nLast Checked: `%v`", body.ImageID, body.ClusterID, name, pol.LastChecked.Time)),
+				Body:  ptr.String(fmt.Sprintf("Image: `%s`\nCluster `%s`\nPolicy: `%s`\nLast Checked: `%v`\nDiagnostic: `%v`", body.ImageID, body.ClusterID, name, pol.LastChecked.Time, pol.Diagnostic)),
 			})
 			if err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to create GitHub issue: %w", err)
