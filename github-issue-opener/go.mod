@@ -11,7 +11,7 @@ require (
 	github.com/google/go-github/v43 v43.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401
-	knative.dev/pkg v0.0.0-20220705130606-e60d250dc637
+	knative.dev/pkg v0.0.0-20220715183228-f1f36a2c977e
 )
 
 require (
