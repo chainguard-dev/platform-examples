@@ -1,6 +1,6 @@
 module chainguard.dev/demos/github-issue-opener
 
-go 1.17
+go 1.18
 
 replace chainguard.dev/api => ../../api
 
