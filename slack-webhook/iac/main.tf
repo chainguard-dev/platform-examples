@@ -84,6 +84,10 @@ resource "google_cloud_run_service" "slack-notifier" {
             }
           }
         }
+        env {
+          name  = "NOTIFY_LEVEL"
+          value = var.notify_level
+        }
       }
     }
   }

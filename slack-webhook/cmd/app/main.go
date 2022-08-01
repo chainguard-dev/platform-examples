@@ -21,12 +21,19 @@ import (
 	"github.com/slack-go/slack"
 )
 
+const (
+	warn  string = "WARN"
+	info  string = "INFO"
+	debug string = "DEBUG"
+)
+
 type envConfig struct {
 	Console      string `envconfig:"CONSOLE_URL" required:"true"`
 	Issuer       string `envconfig:"ISSUER_URL" required:"true"`
 	Group        string `envconfig:"GROUP" required:"true"`
 	Port         int    `envconfig:"PORT" default:"8080" required:"true"`
 	SlackWebhook string `envconfig:"SLACK_WEBHOOK" required:"true"`
+	NotifyLevel  string `envconfig:"NOTIFY_LEVEL" required:"true"`
 }
 
 func main() {
@@ -148,6 +155,11 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr *policy.ImagePolicyRec
 			continue
 		}
 
+		if e.shouldFilterNotification(state) {
+			log.Printf("Not notifying %q due to notify level: %s", stateText.Text, e.NotifyLevel)
+			continue
+		}
+
 		blocks.BlockSet = append(blocks.BlockSet, slack.NewSectionBlock(stateText, nil, nil))
 		out++
 	}
@@ -159,5 +171,27 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr *policy.ImagePolicyRec
 	blocks.BlockSet = append(blocks.BlockSet, divSection)
 	return &slack.WebhookMessage{
 		Blocks: blocks,
+	}
+}
+
+func (e *envConfig) shouldFilterNotification(state *policy.State) bool {
+	switch e.NotifyLevel {
+	case warn:
+		// Filter out improvement changes
+		if policy.ImprovedChange == state.Change {
+			return true
+		}
+		fallthrough
+	case info:
+		// Filter out new passing
+		if state.Valid && policy.NewChange == state.Change {
+			return true
+		}
+		fallthrough
+	case debug:
+		// Always log
+		fallthrough
+	default:
+		return false
 	}
 }

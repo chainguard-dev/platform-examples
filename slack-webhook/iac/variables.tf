@@ -23,3 +23,9 @@ variable "group" {
   type        = string
   description = "The Chainguard group that we are subscribing to policy violations under."
 }
+
+variable "notify_level" {
+  type        = string
+  description = "The notification level to post to slack. [WARN. INFO, DEBUG]."
+  default     = "DEBUG"
+}
