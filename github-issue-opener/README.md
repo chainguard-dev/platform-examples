@@ -2,95 +2,67 @@
 
 This demo application shows how users can write a very simple application that
 authenticates Chainguard webhook requests for continuous verification policy
-violations (TODO), and turns them into Github issues.
+violations, and turns them into Github issues.
 
-### Setup
+### Usage
 
-First, determine the Chainguard IAM Group with which you would like to associate
-the events with:
-```shell
-# We will refer to the group chosen here below as ${GROUP}
-chainctl iam groups ls
+You can use this terraform module to deploy this integration by instantiating
+it like this:
+
+```hcl
+# TODO: pre-reqs like ko/google providers.
+
+module "issue-opener" {
+  # TODO: Replace with whatever we name this.
+  source = "github.com/chainguard-dev/sample-github-issue-opener//iac"
+
+  # name is used to prefix resources created by this demo application
+  # where possible.
+  name = "chainguard-dev"
+
+  # This is the GCP project ID in which certain resource will live including:
+  #  - The container image for this application,
+  #  - The Cloud Run service hosting this application,
+  #  - The Secret Manager secret holding the github access token
+  #    for opening issues.
+  project_id = var.gcp_project_id
+
+  # The Chainguard environment that will be sending us events.
+  # This is used to authenticate the events we receive are from Chainguard.
+  env = "enforce.dev"
+
+  # The Chainguard IAM group from which we expect to receive events.
+  # This is used to authenticate that the Chainguard events are intended
+  # for you, and not another user.
+  group = var.chainguard_iam_group
+
+  # These describe the github organization and repository in which github issues
+  # will be opened.
+  github_org  = "chainguard-dev"
+  github_repo = "mono"
+}
 ```
 
-Next, update `config/200-opener.yaml` to replace the following values as
-documented:
-
-```yaml
-- name: ISSUER_URL
-  # Change this to the issuer of the Chainguard environment
-  # we want to test against.
-  value: http://issuer.oidc-system.svc
-- name: GROUP
-  # Change this to the IAM group with which this webhook is
-  # associated.
-  value: e97622b20fb99bd935ad7f5d7b9fd4cc6d46b9b7
-- name: GITHUB_ORG
-  # Change this to the Github org (or user) hosting the
-  # repository in which to file issues.
-  value: mattmoor
-- name: GITHUB_REPO
-  # Change this to the Github repository in which to file issues.
-  value: eks-demo
-```
-
-Next, update `config/100-github-secret.yaml` to uncomment the secret, and
-fill in a "personal access token" with the `repo` permission:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: github-token
-stringData:
-  # Change this to a personal access token with "repo" permissions.
-  pat: FILL ME IN!
-```
-
-This application can then be applied via:
-```shell
-ko apply -Bf config/
-```
-
-When the Knative Service becomes ready, you should be able to get the resulting
-URL with:
+Once things have been provisioned, this module outputs a `secret-command`
+containing the command to run to upload your Github "personal access token" to
+the Google Secret Manager secret the application will use, looking something
+like this:
 
 ```shell
-# We will refer to the url from here below as ${URL}
-kubectl get ksvc opener -ojson | jq -r .status.url
+echo -n YOUR GITHUB PAT | \
+  gcloud --project ... secrets versions add ... --data-file=-
 ```
 
-You can then associate the webhook with:
-```shell
-chainctl events subscriptions create --group="${GROUP}" "${URL}"
-```
+The personal access token needs permission to open issues on the target
+repository.
 
-### Testing things (STILL ASPIRATIONAL)
 
-> _Note:_ We assume here that your cluster has Chainguard Enforce installed!
-
-First, in a namespace *without* the `cosigned` admission control enabled run:
+Once the secret has been setup, grab the `url` output and the `group` we passed
+in and run:
 
 ```shell
-kubectl run -n "${NO_COSIGNED_NAMESPACE}" unsigned-image \
-   --image="docker.io/ubuntu" -- sleep 3600
+chainctl event subscriptions create URL --group=GROUP
 ```
 
-Next, apply a policy to your cluster:
-
-```yaml
-# kubectl apply this!
-apiVersion: policy.sigstore.dev/v1alpha1
-kind: ClusterImagePolicy
-metadata:
-  name: github-test
-spec:
-  images:
-  - glob: 'docker.io/ubuntu*'
-  authorities:
-  - keyless:
-      url: https://fulcio.sigstore.dev
-```
-
-At this point, you should have an issue opened in the configured repository
-with the offending image!
+That's it!  Now policy failures during continuous verification will open
+github issues outlining the policy violation.

@@ -12,8 +12,6 @@ import (
 	"net/http"
 	"strings"
 
-	"chainguard.dev/api/pkg/events"
-	"chainguard.dev/api/pkg/events/policy"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -77,19 +75,16 @@ func main() {
 		}
 
 		// We are handling a specific event type, so filter the rest.
-		if event.Type() != policy.ChangedEventType {
+		if event.Type() != ChangedEventType {
 			return nil
 		}
 
-		body := &policy.ImagePolicyRecord{}
-		occ := events.Occurrence{
-			Body: body,
-		}
+		occ := Occurrence{}
 		if err := event.DataAs(&occ); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
-		if msg := env.imagePolicyRecordToWebhookMessage(body); msg != nil {
+		if msg := env.imagePolicyRecordToWebhookMessage(occ.Body); msg != nil {
 			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
 			}
@@ -111,7 +106,7 @@ func main() {
 	}
 }
 
-func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr *policy.ImagePolicyRecord) *slack.WebhookMessage {
+func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *slack.WebhookMessage {
 	divSection := slack.NewDividerBlock()
 
 	// Header Section
@@ -137,17 +132,17 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr *policy.ImagePolicyRec
 		}
 		var stateText *slack.TextBlockObject
 		switch state.Change {
-		case policy.NewChange:
+		case NewChange:
 			if state.Valid {
 				emoji = ":star:"
 			} else {
 				emoji = ":x:"
 			}
 			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Policy _%s_ now applies and is *%s*", emoji, name, name, valid), false, false)
-		case policy.DegradedChange:
+		case DegradedChange:
 			emoji = ":fire:"
 			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Degraded change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid), false, false)
-		case policy.ImprovedChange:
+		case ImprovedChange:
 			emoji = ":star-struck:"
 			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Improved change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid), false, false)
 		default:
@@ -174,17 +169,17 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr *policy.ImagePolicyRec
 	}
 }
 
-func (e *envConfig) shouldFilterNotification(state *policy.State) bool {
+func (e *envConfig) shouldFilterNotification(state *State) bool {
 	switch e.NotifyLevel {
 	case warn:
 		// Filter out improvement changes
-		if policy.ImprovedChange == state.Change {
+		if ImprovedChange == state.Change {
 			return true
 		}
 		fallthrough
 	case info:
 		// Filter out new passing
-		if state.Valid && policy.NewChange == state.Change {
+		if state.Valid && NewChange == state.Change {
 			return true
 		}
 		fallthrough

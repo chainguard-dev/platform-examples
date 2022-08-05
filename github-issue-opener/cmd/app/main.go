@@ -18,10 +18,6 @@ import (
 	"github.com/google/go-github/v43/github"
 	"github.com/kelseyhightower/envconfig"
 	"golang.org/x/oauth2"
-	"knative.dev/pkg/ptr"
-
-	"chainguard.dev/api/pkg/events"
-	"chainguard.dev/api/pkg/events/policy"
 )
 
 type envConfig struct {
@@ -81,33 +77,37 @@ func main() {
 		}
 
 		// We are handling a specific event type, so filter the rest.
-		if event.Type() != policy.ChangedEventType {
+		if event.Type() != ChangedEventType {
 			return nil
 		}
 
-		body := &policy.ImagePolicyRecord{}
-		data := events.Occurrence{
-			Body: body,
-		}
+		data := Occurrence{}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
-		for name, pol := range body.Policies {
+		for name, pol := range data.Body.Policies {
 			if pol.Valid {
 				// Not in violation of policy
 				continue
 			}
 			switch pol.Change {
-			case policy.ImprovedChange:
+			case ImprovedChange:
 				// TODO: How is this an improvement?
 				continue
-			case policy.NewChange, policy.DegradedChange:
+			case NewChange, DegradedChange:
 				// We want to fire on these events.
 			}
+
 			issue, _, err := client.Issues.Create(ctx, env.GithubOrg, env.GithubRepo, &github.IssueRequest{
-				Title: ptr.String(fmt.Sprintf("Policy %s failed", name)),
-				Body:  ptr.String(fmt.Sprintf("Image: `%s`\nCluster `%s`\nPolicy: `%s`\nLast Checked: `%v`\nDiagnostic: `%v`", body.ImageID, body.ClusterID, name, pol.LastChecked.Time, pol.Diagnostic)),
+				Title: ptr(fmt.Sprintf("Policy %s failed", name)),
+				Body: ptr(strings.Join([]string{
+					fmt.Sprintf("Image:        `%s`", data.Body.ImageID),
+					fmt.Sprintf("Cluster       `%s`", data.Body.ClusterID),
+					fmt.Sprintf("Policy:       `%s`", name),
+					fmt.Sprintf("Last Checked: `%v`", pol.LastChecked.Time),
+					fmt.Sprintf("Diagnostic:   `%v`", pol.Diagnostic),
+				}, "\n")),
 			})
 			if err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to create GitHub issue: %w", err)
@@ -129,4 +129,8 @@ func main() {
 	}); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func ptr(s string) *string {
+	return &s
 }

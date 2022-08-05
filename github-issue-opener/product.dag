@@ -1,8 +1,0 @@
-name: demos/github-issue-opener
-tenant:
-  config: ./config
-  depends:
-    - name: chainguard.dev/oidc
-      optional: true
-    - name: chainguard.dev/eventing
-      optional: true

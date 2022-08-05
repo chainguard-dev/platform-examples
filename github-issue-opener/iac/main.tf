@@ -1,8 +1,5 @@
 terraform {
   required_providers {
-    chainguard = {
-      source = "chainguard/chainguard"
-    }
     ko = {
       source  = "chainguard-dev/ko"
       version = "0.0.2"
@@ -46,9 +43,8 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
   member    = "serviceAccount:${google_service_account.gh-iss-opener.email}"
 }
 
-resource "ko_image" "app" {
-  // TODO: switch to ghcr.io/distroless/static when Cloud Run supports OCI.
-  base_image  = "gcr.io/distroless/static:nonroot"
+resource "ko_image" "image" {
+  base_image  = "ghcr.io/distroless/static"
   importpath  = "chainguard.dev/demos/github-issue-opener/cmd/app"
   working_dir = path.module
 }
@@ -62,7 +58,7 @@ resource "google_cloud_run_service" "gh-iss" {
     spec {
       service_account_name = google_service_account.gh-iss-opener.email
       containers {
-        image = ko_image.app.image_ref
+        image = ko_image.image.image_ref
         env {
           name  = "ISSUER_URL"
           value = "https://issuer.${var.env}"
@@ -113,10 +109,4 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
   service  = google_cloud_run_service.gh-iss.name
 
   policy_data = data.google_iam_policy.noauth.policy_data
-}
-
-resource "chainguard_subscription" "github-issue-subscription" {
-  parent_id = var.group
-
-  sink = google_cloud_run_service.gh-iss.status[0].url
 }

@@ -4,91 +4,66 @@ This demo application shows how users can write a very simple application that
 authenticates Chainguard webhook requests for continuous verification policy
 violations, and turns them into Slack notifications.
 
-### Setup
+### Usage
+
+You can use this terraform module to deploy this integration by instantiating
+it like this:
+
+```hcl
+# TODO: pre-reqs like ko/google providers.
+
+module "issue-opener" {
+  # TODO: Replace with whatever we name this.
+  source = "github.com/chainguard-dev/sample-slack-notifier//iac"
+
+  # name is used to prefix resources created by this demo application
+  # where possible.
+  name = "chainguard-dev"
+
+  # This is the GCP project ID in which certain resource will live including:
+  #  - The container image for this application,
+  #  - The Cloud Run service hosting this application,
+  #  - The Secret Manager secret holding the slack webhook URL
+  #    for opening issues.
+  project_id = var.gcp_project_id
+
+  # The Chainguard environment that will be sending us events.
+  # This is used to authenticate the events we receive are from Chainguard.
+  env = "enforce.dev"
+
+  # The Chainguard IAM group from which we expect to receive events.
+  # This is used to authenticate that the Chainguard events are intended
+  # for you, and not another user.
+  group = var.chainguard_iam_group
+
+  # This let's you control the verbosity of the notifications.
+  # WARN  - policy failures
+  # INFO  - policy failures or improvements
+  # DEBUG - all events
+  notify_level = var.notification_level
+}
+```
+
+Once things have been provisioned, this module outputs a `secret-command`
+containing the command to run to upload your Slack webhook URL to the Google
+Secret Manager secret the application will use, looking something like this:
+
+```shell
+echo -n YOUR GITHUB PAT | \
+  gcloud --project ... secrets versions add ... --data-file=-
+```
 
 Create a Slack Webhook URL as detailed in the
 [Incoming webhooks for Slack](https://slack.com/help/articles/115005265063-Incoming-webhooks-for-Slack)
-help document.
+help document, and run the above command!
 
-Then, update `config/100-slack-secret.yaml` to uncomment the secret, and
-add the Slack webhook url:
 
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: slack
-stringData:
-  # Change this to a Slack Webhook URL:
-  webhook: FILL ME IN!
-```
-
-Next, update `config/200-slack.yaml` to replace the following values as
-documented:
-
-```yaml
-- name: CONSOLE_URL
-  # Change this to the Console URL of the Chainguard environment
-  # we want to test against.
-  value: http://console.api-system.svc
-- name: ISSUER_URL
-  # Change this to the issuer of the Chainguard environment
-  # we want to test against.
-  value: http://issuer.oidc-system.svc
-- name: GROUP
-  # Change this to the IAM group with which the chainguard subscription
-  # webhook is associated.
-  value: e97622b20fb99bd935ad7f5d7b9fd4cc6d46b9b7
-
-```
-
-This application can then be applied via:
-```shell
-ko apply -Bf config/
-```
-
-When the Knative Service becomes ready, you should be able to get the resulting
-URL with:
+Once the secret has been setup, grab the `url` output and the `group` we passed
+in and run:
 
 ```shell
-# We will refer to the url from here below as ${URL}
-kubectl get ksvc slack -ojson | jq -r .status.url
+chainctl event subscriptions create URL --group=GROUP
 ```
 
-> _Note:_ `${GROUP}` refers to the group Chainguard Enforce was installed into
-> for your cluster.
-
-You can then associate the webhook with:
-```shell
-chainctl events subscriptions create --group="${GROUP}" "${URL}"
-```
-
-### Testing things (STILL ASPIRATIONAL)
-
-> _Note:_ We assume here that your cluster has Chainguard Enforce installed!
-
-First, in a namespace *without* the `cosigned` admission control enabled run:
-
-```shell
-kubectl run -n "${NO_COSIGNED_NAMESPACE}" unsigned-image \
-   --image="docker.io/ubuntu" -- sleep 3600
-```
-
-Next, apply a policy to your cluster:
-
-```yaml
-# kubectl apply this!
-apiVersion: policy.sigstore.dev/v1alpha1
-kind: ClusterImagePolicy
-metadata:
-  name: slack-test
-spec:
-  images:
-  - glob: 'docker.io/ubuntu*'
-  authorities:
-  - keyless:
-      url: https://fulcio.sigstore.dev
-```
-
-At this point, you should have a Slack notification in the configured channel
-with the offending image!
+That's it!  Now policy failures during continuous verification will
+post notifications to slack outlining the policy violation.
