@@ -13,8 +13,7 @@ it like this:
 # TODO: pre-reqs like ko/google providers.
 
 module "issue-opener" {
-  # TODO: Replace with whatever we name this.
-  source = "github.com/chainguard-dev/sample-slack-notifier//iac"
+  source = "github.com/chainguard-dev/enforce-events//slack-webhook/iac"
 
   # name is used to prefix resources created by this demo application
   # where possible.
