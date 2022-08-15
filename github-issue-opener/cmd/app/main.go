@@ -21,12 +21,13 @@ import (
 )
 
 type envConfig struct {
-	Issuer      string `envconfig:"ISSUER_URL" required:"true"`
-	Group       string `envconfig:"GROUP" required:"true"`
-	Port        int    `envconfig:"PORT" default:"8080" required:"true"`
-	GithubOrg   string `envconfig:"GITHUB_ORG" required:"true"`
-	GithubRepo  string `envconfig:"GITHUB_Repo" required:"true"`
-	GithubToken string `envconfig:"GITHUB_TOKEN" required:"true"`
+	Issuer      string   `envconfig:"ISSUER_URL" required:"true"`
+	Group       string   `envconfig:"GROUP" required:"true"`
+	Port        int      `envconfig:"PORT" default:"8080" required:"true"`
+	GithubOrg   string   `envconfig:"GITHUB_ORG" required:"true"`
+	GithubRepo  string   `envconfig:"GITHUB_REPO" required:"true"`
+	GithubToken string   `envconfig:"GITHUB_TOKEN" required:"true"`
+	Labels      []string `envconfig:"LABELS" required:"false"`
 }
 
 func main() {
@@ -100,7 +101,8 @@ func main() {
 			}
 
 			issue, _, err := client.Issues.Create(ctx, env.GithubOrg, env.GithubRepo, &github.IssueRequest{
-				Title: ptr(fmt.Sprintf("Policy %s failed", name)),
+				Title:  ptr(fmt.Sprintf("Policy %s failed", name)),
+				Labels: &env.Labels,
 				Body: ptr(strings.Join([]string{
 					fmt.Sprintf("Image:        `%s`", data.Body.ImageID),
 					fmt.Sprintf("Cluster       `%s`", data.Body.ClusterID),
