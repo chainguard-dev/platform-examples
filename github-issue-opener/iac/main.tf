@@ -74,6 +74,10 @@ resource "google_cloud_run_service" "gh-iss" {
           value = var.github_repo
         }
         env {
+          name  = "LABELS"
+          value = "policy-failure"
+        }
+        env {
           name = "GITHUB_TOKEN"
           value_from {
             secret_key_ref {
