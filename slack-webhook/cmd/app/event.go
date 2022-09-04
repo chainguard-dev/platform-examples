@@ -8,7 +8,10 @@ package main
 // NOTE: these types will eventually be made available as part of a Chainguard
 // SDK along with our API clients.
 
-import cloudevents "github.com/cloudevents/sdk-go/v2"
+import (
+	"encoding/json"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+)
 
 // Occurrence is the CloudEvent payload for events.
 type Occurrence struct {
@@ -16,7 +19,7 @@ type Occurrence struct {
 
 	// Body is the resource that was created.
 	// For this sample, it will always be ImagePolicyRecord.
-	Body ImagePolicyRecord `json:"body,omitempty"`
+	Body json.RawMessage `json:"body,omitempty"`
 }
 
 // Actor is the event payload form of which identity was responsible for the
@@ -28,6 +31,9 @@ type Actor struct {
 
 // ChangedEventType is the cloudevents event type for validation state change for policy.
 const ChangedEventType = "dev.chainguard.policy.validation.changed.v1"
+
+// AdmissionEventType is the cloudevents event type for admission webhook events.
+const AdmissionEventType = "dev.chainguard.admission.v1"
 
 const (
 	// NewChange is for new policy state.

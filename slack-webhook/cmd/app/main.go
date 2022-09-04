@@ -7,7 +7,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	admissionv1 "k8s.io/api/admission/v1"
 	"log"
 	"net/http"
 	"strings"
@@ -32,13 +34,24 @@ type envConfig struct {
 	Port         int    `envconfig:"PORT" default:"8080" required:"true"`
 	SlackWebhook string `envconfig:"SLACK_WEBHOOK" required:"true"`
 	NotifyLevel  string `envconfig:"NOTIFY_LEVEL" required:"true"`
+	Debug        bool   `envconfig:"DEBUG" default:"false" required:"false"`
 }
 
 func main() {
+	log.Printf("Starting Slack Webhook")
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
 		log.Fatalf("failed to process env var: %s", err)
 	}
+
+	if env.Debug {
+		log.Printf("Console URL: %v", env.Console)
+		log.Printf("Group veiwing events: %v", env.Group)
+		log.Printf("Sending events %v", env.SlackWebhook)
+		log.Printf("Issuer: %v", env.Issuer)
+		log.Printf("Notify Level: %v", env.NotifyLevel)
+	}
+
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
 		// We need to infuse the request onto context, so we can
 		// authenticate requests.
@@ -46,10 +59,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create client, %v", err)
 	}
+
 	ctx := context.Background()
 
 	// Construct a verifier that ensures tokens are issued by the Chainguard
 	// issuer we expect and are intended for a customer webhook.
+
+	if env.Debug {
+		log.Printf("Getting OIDC Provider")
+	}
+
 	provider, err := oidc.NewProvider(ctx, env.Issuer)
 	if err != nil {
 		log.Fatalf("failed to create provider: %v", err)
@@ -74,17 +93,52 @@ func main() {
 			return cloudevents.NewHTTPResult(http.StatusForbidden, "this token is intended for %s, wanted one for %s", group, env.Group)
 		}
 
-		// We are handling a specific event type, so filter the rest.
-		if event.Type() != ChangedEventType {
-			return nil
-		}
-
 		occ := Occurrence{}
 		if err := event.DataAs(&occ); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
-		if msg := env.imagePolicyRecordToWebhookMessage(occ.Body); msg != nil {
+		if env.Debug {
+			log.Printf("Processing Event Type: %v", event.Type())
+			log.Printf("Occurance: %v", string(occ.Body))
+		}
+
+		msg := &slack.WebhookMessage{}
+
+		switch EventType := event.Type(); EventType {
+		case ChangedEventType:
+			log.Printf("Processing ChangedEventType")
+			var ipr = ImagePolicyRecord{}
+
+			err := json.Unmarshal(occ.Body, &ipr)
+			if err != nil {
+				log.Fatalln("error:", err)
+			}
+			log.Printf("Image Policy Cluster ID: %v", ipr.ClusterID)
+
+			msg = env.imagePolicyRecordToWebhookMessage(ipr)
+		case AdmissionEventType:
+			log.Printf("Processing AdmissionEventType")
+			admission := admissionv1.AdmissionReview{}
+			err := json.Unmarshal(occ.Body, &admission)
+			if err != nil {
+				log.Fatalln("error:", err)
+			}
+
+			if env.Debug {
+				log.Printf("Response Message %v", admission.Response.Result.Message)
+			}
+
+			msg = env.admissionReviewToWebhookMessage(admission)
+		default:
+			if env.Debug {
+				log.Printf("EventType:%v", EventType)
+				log.Printf("Event Body: %v", string(event.Data()))
+			}
+			return nil
+		}
+
+		if msg != nil {
 			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
 			}
@@ -169,6 +223,37 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *sl
 	}
 }
 
+func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionReview) *slack.WebhookMessage {
+	divSection := slack.NewDividerBlock()
+
+	user := adm.Request.UserInfo.UID
+	podName := adm.Request.Name
+	namespace := adm.Request.Namespace
+	message := adm.Response.Result.Message
+
+	// Header Section
+	headerText := slack.NewTextBlockObject("mrkdwn",
+		fmt.Sprintf("*Admission Alert*"),
+		false, false)
+	headerSection := slack.NewSectionBlock(headerText, nil, nil)
+
+	blocks := &slack.Blocks{
+		BlockSet: []slack.Block{
+			headerSection,
+		},
+	}
+
+	emoji := ":fire:"
+
+	stateText := slack.NewTextBlockObject("mrkdwn",
+		fmt.Sprintf("\t%s  User %v tried to deploy Pod %s in Namespace %v but failed becuase of %v", emoji, user, podName, namespace, message), false, false)
+	blocks.BlockSet = append(blocks.BlockSet, slack.NewSectionBlock(stateText, nil, nil))
+	blocks.BlockSet = append(blocks.BlockSet, divSection)
+	return &slack.WebhookMessage{
+		Blocks: blocks,
+	}
+
+}
 func (e *envConfig) shouldFilterNotification(state *State) bool {
 	switch e.NotifyLevel {
 	case warn:
