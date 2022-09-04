@@ -9,7 +9,6 @@ package main
 // SDK along with our API clients.
 
 import (
-	"encoding/json"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 )
 
@@ -18,8 +17,10 @@ type Occurrence struct {
 	Actor *Actor `json:"actor,omitempty"`
 
 	// Body is the resource that was created.
-	// For this sample, it will always be ImagePolicyRecord.
-	Body json.RawMessage `json:"body,omitempty"`
+	// For this sample, it will always be one of:
+	// - ImagePolicyRecord (for continuous verification), or
+	// - admissionv1.AdmissionReview (for admission control).
+	Body interface{} `json:"body,omitempty"`
 }
 
 // Actor is the event payload form of which identity was responsible for the

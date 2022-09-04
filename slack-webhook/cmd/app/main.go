@@ -7,12 +7,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	admissionv1 "k8s.io/api/admission/v1"
 	"log"
 	"net/http"
 	"strings"
+
+	admissionv1 "k8s.io/api/admission/v1"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
@@ -44,13 +44,14 @@ func main() {
 		log.Fatalf("failed to process env var: %s", err)
 	}
 
-	if env.Debug {
-		log.Printf("Console URL: %v", env.Console)
-		log.Printf("Group veiwing events: %v", env.Group)
-		log.Printf("Sending events %v", env.SlackWebhook)
-		log.Printf("Issuer: %v", env.Issuer)
-		log.Printf("Notify Level: %v", env.NotifyLevel)
-	}
+	// TODO(mattmoor): Validate that env.Group is a valid UIDP once our library
+	// is public, so that we can fail faster on user error.
+
+	log.Printf("Console URL: %v", env.Console)
+	log.Printf("Group veiwing events: %v", env.Group)
+	log.Printf("Sending events %v", env.SlackWebhook)
+	log.Printf("Issuer: %v", env.Issuer)
+	log.Printf("Notify Level: %v", env.NotifyLevel)
 
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
 		// We need to infuse the request onto context, so we can
@@ -65,10 +66,7 @@ func main() {
 	// Construct a verifier that ensures tokens are issued by the Chainguard
 	// issuer we expect and are intended for a customer webhook.
 
-	if env.Debug {
-		log.Printf("Getting OIDC Provider")
-	}
-
+	log.Printf("Getting OIDC Provider")
 	provider, err := oidc.NewProvider(ctx, env.Issuer)
 	if err != nil {
 		log.Fatalf("failed to create provider: %v", err)
@@ -93,43 +91,40 @@ func main() {
 			return cloudevents.NewHTTPResult(http.StatusForbidden, "this token is intended for %s, wanted one for %s", group, env.Group)
 		}
 
-		occ := Occurrence{}
-		if err := event.DataAs(&occ); err != nil {
-			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
-		}
-
-		if env.Debug {
-			log.Printf("Processing Event Type: %v", event.Type())
-			log.Printf("Occurance: %v", string(occ.Body))
-		}
-
-		msg := &slack.WebhookMessage{}
+		log.Printf("Processing Event Type: %v", event.Type())
 
 		switch EventType := event.Type(); EventType {
 		case ChangedEventType:
-			log.Printf("Processing ChangedEventType")
 			var ipr = ImagePolicyRecord{}
-
-			err := json.Unmarshal(occ.Body, &ipr)
-			if err != nil {
-				log.Fatalln("error:", err)
+			occ := Occurrence{
+				Body: &ipr,
+			}
+			if err := event.DataAs(&occ); err != nil {
+				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 			}
 			log.Printf("Image Policy Cluster ID: %v", ipr.ClusterID)
 
-			msg = env.imagePolicyRecordToWebhookMessage(ipr)
+			msg := env.imagePolicyRecordToWebhookMessage(ipr)
+			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
+				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
+			}
+			return nil
+
 		case AdmissionEventType:
-			log.Printf("Processing AdmissionEventType")
 			admission := admissionv1.AdmissionReview{}
-			err := json.Unmarshal(occ.Body, &admission)
-			if err != nil {
-				log.Fatalln("error:", err)
+			occ := Occurrence{
+				Body: &admission,
 			}
-
-			if env.Debug {
-				log.Printf("Response Message %v", admission.Response.Result.Message)
+			if err := event.DataAs(&occ); err != nil {
+				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 			}
+			log.Printf("Response Message %v", admission.Response.Result.Message)
 
-			msg = env.admissionReviewToWebhookMessage(admission)
+			msg := env.admissionReviewToWebhookMessage(admission)
+			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
+				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
+			}
+			return nil
 		default:
 			if env.Debug {
 				log.Printf("EventType:%v", EventType)
@@ -137,14 +132,6 @@ func main() {
 			}
 			return nil
 		}
-
-		if msg != nil {
-			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
-				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
-			}
-		}
-
-		return nil
 	}
 
 	if err := c.StartReceiver(ctx, func(ctx context.Context, event cloudevents.Event) error {
