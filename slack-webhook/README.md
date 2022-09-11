@@ -30,8 +30,8 @@ module "issue-opener" {
   # This is used to authenticate the events we receive are from Chainguard.
   env = "enforce.dev"
 
-  # The Chainguard IAM group from which we expect to receive events.
-  # This is used to authenticate that the Chainguard events are intended
+  # The Chainguard IAM group ID (not the name!) from which we expect to receive
+  # events. This is used to authenticate that the Chainguard events are intended
   # for you, and not another user.
   group = var.chainguard_iam_group
 
