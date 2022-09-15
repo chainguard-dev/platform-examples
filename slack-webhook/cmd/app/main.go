@@ -213,15 +213,14 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *sl
 func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionReview) *slack.WebhookMessage {
 	divSection := slack.NewDividerBlock()
 
-	user := adm.Request.UserInfo.UID
+	user := adm.Request.UserInfo.Username
 	podName := adm.Request.Name
 	namespace := adm.Request.Namespace
 	message := adm.Response.Result.Message
 
 	// Header Section
 	headerText := slack.NewTextBlockObject("mrkdwn",
-		fmt.Sprintf("*Admission Alert*"),
-		false, false)
+		"*Admission Alert*", false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	blocks := &slack.Blocks{
@@ -233,7 +232,7 @@ func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionRev
 	emoji := ":fire:"
 
 	stateText := slack.NewTextBlockObject("mrkdwn",
-		fmt.Sprintf("\t%s  User %v tried to deploy Pod %s in Namespace %v but failed becuase of %v", emoji, user, podName, namespace, message), false, false)
+		fmt.Sprintf("\t%s  User %v tried to deploy Pod %s in Namespace %v but failed because of %v", emoji, user, podName, namespace, message), false, false)
 	blocks.BlockSet = append(blocks.BlockSet, slack.NewSectionBlock(stateText, nil, nil))
 	blocks.BlockSet = append(blocks.BlockSet, divSection)
 	return &slack.WebhookMessage{
