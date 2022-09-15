@@ -232,7 +232,7 @@ func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionRev
 	emoji := ":fire:"
 
 	stateText := slack.NewTextBlockObject("mrkdwn",
-		fmt.Sprintf("\t%s  User %v tried to deploy Pod %s in Namespace %v but failed becuase of %v", emoji, user, podName, namespace, message), false, false)
+		fmt.Sprintf("\t%s  User %v tried to deploy Pod %s in Namespace %v but failed because of %v", emoji, user, podName, namespace, message), false, false)
 	blocks.BlockSet = append(blocks.BlockSet, slack.NewSectionBlock(stateText, nil, nil))
 	blocks.BlockSet = append(blocks.BlockSet, divSection)
 	return &slack.WebhookMessage{
