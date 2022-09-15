@@ -213,15 +213,14 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *sl
 func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionReview) *slack.WebhookMessage {
 	divSection := slack.NewDividerBlock()
 
-	user := adm.Request.UserInfo.UID
+	user := adm.Request.UserInfo.Username
 	podName := adm.Request.Name
 	namespace := adm.Request.Namespace
 	message := adm.Response.Result.Message
 
 	// Header Section
 	headerText := slack.NewTextBlockObject("mrkdwn",
-		fmt.Sprintf("*Admission Alert*"),
-		false, false)
+		"*Admission Alert*", false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	blocks := &slack.Blocks{
