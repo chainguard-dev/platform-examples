@@ -43,7 +43,7 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
 
 resource "ko_image" "image" {
   base_image  = "ghcr.io/distroless/static"
-  importpath  = "chainguard.dev/demos/github-issue-opener/cmd/app"
+  importpath  = "github.com/chainguard-dev/enforce-events/github-issue-opener/cmd/app"
   working_dir = path.module
 }
 
