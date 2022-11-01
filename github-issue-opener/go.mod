@@ -1,6 +1,6 @@
-module chainguard.dev/demos/github-issue-opener
+module github.com/chainguard-dev/enforce-events/github-issue-opener
 
-go 1.18
+go 1.19
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.8.0
