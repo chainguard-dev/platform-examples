@@ -171,7 +171,8 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *sl
 		} else {
 			valid = "failing"
 		}
-		var stateText *slack.TextBlockObject
+
+		var body string
 		switch state.Change {
 		case NewChange:
 			if state.Valid {
@@ -179,17 +180,21 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *sl
 			} else {
 				emoji = ":x:"
 			}
-			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Policy _%s_ now applies and is *%s*", emoji, name, name, valid), false, false)
+			body = fmt.Sprintf("\t%s [%s] Policy _%s_ now applies and is *%s*", emoji, name, name, valid)
 		case DegradedChange:
 			emoji = ":fire:"
-			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Degraded change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid), false, false)
+			body = fmt.Sprintf("\t%s [%s] Degraded change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid)
 		case ImprovedChange:
 			emoji = ":star-struck:"
-			stateText = slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\t%s [%s] Improved change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid), false, false)
+			body = fmt.Sprintf("\t%s [%s] Improved change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid)
 		default:
 			// No change, don't report.
 			continue
 		}
+		if state.Diagnostic != "" {
+			body += "\n\n```\n" + state.Diagnostic + "\n```\n"
+		}
+		stateText := slack.NewTextBlockObject("mrkdwn", body, false, false)
 
 		if e.shouldFilterNotification(state) {
 			log.Printf("Not notifying %q due to notify level: %s", stateText.Text, e.NotifyLevel)
@@ -231,8 +236,9 @@ func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionRev
 
 	emoji := ":fire:"
 
-	stateText := slack.NewTextBlockObject("mrkdwn",
-		fmt.Sprintf("\t%s  User %v tried to deploy Pod %s in Namespace %v but failed because of %v", emoji, user, podName, namespace, message), false, false)
+	body := fmt.Sprintf("\t%s User %v tried to deploy Pod %s in Namespace %v but failed because of:\n```\n%s\n```", emoji, user, podName, namespace, message)
+
+	stateText := slack.NewTextBlockObject("mrkdwn", body, false, false)
 	blocks.BlockSet = append(blocks.BlockSet, slack.NewSectionBlock(stateText, nil, nil))
 	blocks.BlockSet = append(blocks.BlockSet, divSection)
 	return &slack.WebhookMessage{
