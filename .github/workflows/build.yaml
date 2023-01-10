@@ -47,6 +47,11 @@ jobs:
 
       - uses: imjasonh/setup-ko@ace48d793556083a76f1e3e6068850c1f4a369aa
 
+      - name: ko login
+        shell: bash
+        run: |
+          ko login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
