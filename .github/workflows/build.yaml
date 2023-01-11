@@ -67,6 +67,8 @@ jobs:
           echo "KO build $(cat ko.images)" 
 
       - name: Signing
+        env:
+          COSIGN_EXPERIMENTAL: true
         run: |
           echo "Signing $(cat ${{matrix.image}}/cmd/app/ko.images)" 
 
