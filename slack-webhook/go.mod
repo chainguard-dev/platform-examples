@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.8.0
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/slack-go/slack v0.11.0
+	github.com/slack-go/slack v0.12.1
 	k8s.io/api v0.25.0
 )
 
