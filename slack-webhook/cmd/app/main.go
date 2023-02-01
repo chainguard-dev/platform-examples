@@ -54,12 +54,15 @@ func main() {
 	log.Printf("Notify Level: %v", env.NotifyLevel)
 
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
+		cloudevents.WithHeader("User-Agent", "Chainguard Enforce"),
 		// We need to infuse the request onto context, so we can
 		// authenticate requests.
 		cehttp.WithRequestDataAtContextMiddleware())
 	if err != nil {
 		log.Fatalf("failed to create client, %v", err)
 	}
+
+	slackHttpClient := &http.Client{Transport: newAddHeaderTransport(nil)}
 
 	ctx := context.Background()
 
@@ -105,7 +108,7 @@ func main() {
 			log.Printf("Image Policy Cluster ID: %v", ipr.ClusterID)
 
 			msg := env.imagePolicyRecordToWebhookMessage(ipr)
-			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
+			if err := slack.PostWebhookCustomHTTP(env.SlackWebhook, slackHttpClient, msg); err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
 			}
 			return nil
@@ -121,7 +124,7 @@ func main() {
 			log.Printf("Response Message %v", admission.Response.Result.Message)
 
 			msg := env.admissionReviewToWebhookMessage(admission)
-			if err := slack.PostWebhook(env.SlackWebhook, msg); err != nil {
+			if err := slack.PostWebhookCustomHTTP(env.SlackWebhook, slackHttpClient, msg); err != nil {
 				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to send to slack webhook: %w", err)
 			}
 			return nil
@@ -246,6 +249,7 @@ func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionRev
 	}
 
 }
+
 func (e *envConfig) shouldFilterNotification(state *State) bool {
 	switch e.NotifyLevel {
 	case warn:
@@ -266,4 +270,20 @@ func (e *envConfig) shouldFilterNotification(state *State) bool {
 	default:
 		return false
 	}
+}
+
+type addHeaderTransport struct {
+	T http.RoundTripper
+}
+
+func (adt *addHeaderTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("User-Agent", "Enforce-Events")
+	return adt.T.RoundTrip(req)
+}
+
+func newAddHeaderTransport(T http.RoundTripper) *addHeaderTransport {
+	if T == nil {
+		T = http.DefaultTransport
+	}
+	return &addHeaderTransport{T}
 }
