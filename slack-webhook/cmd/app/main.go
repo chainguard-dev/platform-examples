@@ -54,7 +54,7 @@ func main() {
 	log.Printf("Notify Level: %v", env.NotifyLevel)
 
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
-		cloudevents.WithHeader("User-Agent", "Enforce-Events"),
+		cloudevents.WithHeader("User-Agent", "Chainguard Enforce"),
 		// We need to infuse the request onto context, so we can
 		// authenticate requests.
 		cehttp.WithRequestDataAtContextMiddleware())
