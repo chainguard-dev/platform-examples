@@ -41,7 +41,7 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
   member    = "serviceAccount:${google_service_account.gh-iss-opener.email}"
 }
 
-resource "ko_build" "image" {
+resource "ko_image" "image" {
   base_image  = "ghcr.io/distroless/static"
   importpath  = "github.com/chainguard-dev/enforce-events/github-issue-opener/cmd/app"
   working_dir = path.module
@@ -56,7 +56,7 @@ resource "google_cloud_run_service" "gh-iss" {
     spec {
       service_account_name = google_service_account.gh-iss-opener.email
       containers {
-        image = ko_build.image.image_ref
+        image = ko_image.image.image_ref
         env {
           name  = "ISSUER_URL"
           value = "https://issuer.${var.env}"

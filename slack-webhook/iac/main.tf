@@ -41,7 +41,7 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
   member    = "serviceAccount:${google_service_account.slack-notifier.email}"
 }
 
-resource "ko_build" "image" {
+resource "ko_image" "image" {
   base_image  = "ghcr.io/distroless/static"
   importpath  = "github.com/chainguard-dev/enforce-events/slack-webhook/cmd/app"
   working_dir = path.module
@@ -56,7 +56,7 @@ resource "google_cloud_run_service" "slack-notifier" {
     spec {
       service_account_name = google_service_account.slack-notifier.email
       containers {
-        image = ko_build.image.image_ref
+        image = ko_image.image.image_ref
         env {
           name  = "CONSOLE_URL"
           value = "https://console.${var.env}"
