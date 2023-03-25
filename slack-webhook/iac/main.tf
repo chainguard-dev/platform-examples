@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     ko = {
-      source  = "chainguard-dev/ko"
+      source  = "ko-build/ko"
     }
     google = {
       source  = "hashicorp/google"
