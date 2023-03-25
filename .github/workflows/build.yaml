@@ -22,11 +22,12 @@ jobs:
           check-latest: true
 
       - uses: ko-build/setup-ko@ace48d793556083a76f1e3e6068850c1f4a369aa # v0.6
+      - uses: chainguard-dev/actions/setup-registry@main
 
       - name: Build
         run: |
           cd ${{matrix.image}}/cmd/app
 
-          ko build --local --image-refs=ko.images --bare .
+          KO_DOCKER_REPO=localhost:1338/test ko build --local --image-refs=ko.images --bare .
 
           echo "KO build $(cat ko.images)"
