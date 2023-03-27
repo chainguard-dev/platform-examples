@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: [github-issue-opener, slack-webhook]
+        image:
+          - github-issue-opener
+          - slack-webhook
 
     steps:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -25,9 +27,8 @@ jobs:
       - uses: chainguard-dev/actions/setup-registry@main
 
       - name: Build
+        working-directory: ${{ matrix.image }}/cmd/app
         run: |
-          cd ${{matrix.image}}/cmd/app
-
-          KO_DOCKER_REPO=localhost:1338/test ko build --local --image-refs=ko.images --bare .
+          KO_DOCKER_REPO=localhost:1338/test ko build --image-refs=ko.images --bare .
 
           echo "KO build $(cat ko.images)"
