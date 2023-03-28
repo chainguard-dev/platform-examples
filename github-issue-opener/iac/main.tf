@@ -1,10 +1,10 @@
 terraform {
   required_providers {
     ko = {
-      source  = "ko-build/ko"
+      source = "ko-build/ko"
     }
     google = {
-      source  = "hashicorp/google"
+      source = "hashicorp/google"
     }
   }
 }
@@ -75,7 +75,7 @@ resource "google_cloud_run_service" "gh-iss" {
         }
         env {
           name  = "LABELS"
-          value = "policy-failure"
+          value = var.labels
         }
         env {
           name = "GITHUB_TOKEN"
