@@ -4,12 +4,10 @@
 spec:
   authorities:
     - keyless:
-        url: https://fulcio.sigstore.dev
         identities:
-          - subjectRegExp: .+@chainguard.dev$
-            issuer: https://accounts.google.com
-      ctlog:
-        url: https://rekor.sigstore.dev
+          - issuer: https://accounts.google.com
+          - issuer: https://github.com/login/oauth
+
     - key:
-        # Allow commits signed by GitHub.
+        # allow commits signed by GitHub, e.g. the UI
         kms: https://github.com/web-flow.gpg
