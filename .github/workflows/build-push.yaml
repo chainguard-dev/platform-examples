@@ -70,6 +70,6 @@ jobs:
         run:
           cosign download sbom "$(cat ${{matrix.image}}/cmd/app/ko.images)"  --output-file bom.spdx.json
 
-          cosign attest --timeout=0 --force --type spdxjson --predicate bom.spdx.json "$(cat ${{matrix.image}}/cmd/app/ko.images)"
+          cosign attest --timeout=0 --type spdxjson --predicate bom.spdx.json "$(cat ${{matrix.image}}/cmd/app/ko.images)"
 
           cosign verify-attestation --type spdxjson "$(cat ${{matrix.image}}/cmd/app/ko.images)"
