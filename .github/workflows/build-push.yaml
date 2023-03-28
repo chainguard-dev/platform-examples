@@ -72,4 +72,7 @@ jobs:
 
           cosign attest --timeout=0 --type spdxjson --predicate bom.spdx.json "$(cat ${{matrix.image}}/cmd/app/ko.images)"
 
-          cosign verify-attestation --type spdxjson "$(cat ${{matrix.image}}/cmd/app/ko.images)"
+          cosign verify-attestation --type spdxjson \
+          --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+          --certificate-identity "https://github.com/chainguard-dev/enforce-events/.github/workflows/build-push.yaml@refs/heads/main" \
+          "$(cat ${{matrix.image}}/cmd/app/ko.images)"
