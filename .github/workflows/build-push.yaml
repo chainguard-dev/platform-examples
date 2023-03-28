@@ -25,17 +25,13 @@ jobs:
 
       - uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
-          go-version: 1.19
+          go-version: '1.20'
           check-latest: true
 
       - run: go version
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b # v2.8.1
-
-      - name: Check install - cosign!
-        shell: bash
-        run: cosign version
+        uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65 # v3.0.1
 
       - name: Cosign login
         shell: bash
@@ -62,7 +58,7 @@ jobs:
 
       - name: Signing
         env:
-          COSIGN_EXPERIMENTAL: true
+          COSIGN_YES: true
         run: |
           echo "Signing $(cat ${{matrix.image}}/cmd/app/ko.images)"
 
@@ -70,7 +66,7 @@ jobs:
 
       - name: Sbom Attest
         env:
-          COSIGN_EXPERIMENTAL: true
+          COSIGN_YES: true
         run:
           cosign download sbom "$(cat ${{matrix.image}}/cmd/app/ko.images)"  --output-file bom.spdx.json
 
