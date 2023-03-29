@@ -47,8 +47,8 @@ jobs:
 
       - name: Build
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            KO_DOCKER_REPO: ghcr.io/chainguard-dev/${{matrix.image}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KO_DOCKER_REPO: ghcr.io/chainguard-dev/${{matrix.image}}
         run: |
           cd ${{matrix.image}}/cmd/app
 
@@ -67,12 +67,12 @@ jobs:
       - name: Sbom Attest
         env:
           COSIGN_YES: true
-        run:
+        run: |
           cosign download sbom "$(cat ${{matrix.image}}/cmd/app/ko.images)"  --output-file bom.spdx.json
 
           cosign attest --timeout=0 --type spdxjson --predicate bom.spdx.json "$(cat ${{matrix.image}}/cmd/app/ko.images)"
 
           cosign verify-attestation --type spdxjson \
-          --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-          --certificate-identity "https://github.com/chainguard-dev/enforce-events/.github/workflows/build-push.yaml@refs/heads/main" \
-          "$(cat ${{matrix.image}}/cmd/app/ko.images)"
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --certificate-identity "https://github.com/chainguard-dev/enforce-events/.github/workflows/build-push.yaml@refs/heads/main" \
+            "$(cat ${{matrix.image}}/cmd/app/ko.images)"
