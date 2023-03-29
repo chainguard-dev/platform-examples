@@ -1,10 +1,10 @@
 terraform {
   required_providers {
     ko = {
-      source  = "ko-build/ko"
+      source = "ko-build/ko"
     }
     google = {
-      source  = "hashicorp/google"
+      source = "hashicorp/google"
     }
   }
 }
