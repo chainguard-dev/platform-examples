@@ -39,6 +39,9 @@ module "issue-opener" {
   # will be opened.
   github_org  = "chainguard-dev"
   github_repo = "mono"
+
+  # These are the labels that get applied to opened issues.
+  labels = "label1,label2,label3"
 }
 ```
 

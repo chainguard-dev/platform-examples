@@ -33,3 +33,8 @@ variable "github_repo" {
   type        = string
   description = "The github repository in which to open issues for policy violations."
 }
+
+variable "labels" {
+  type        = string
+  description = "The labels (comma separated) to open issues with for policy violations."
+}
