@@ -15,7 +15,7 @@ variable "location" {
 
 variable "env" {
   type        = string
-  default     = "guak.dev"
+  default     = "enforce.dev"
   description = "The Chainguard environment against which this solution is configured."
 }
 

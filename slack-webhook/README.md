@@ -26,10 +26,6 @@ module "issue-opener" {
   #    for opening issues.
   project_id = var.gcp_project_id
 
-  # The Chainguard environment that will be sending us events.
-  # This is used to authenticate the events we receive are from Chainguard.
-  env = "enforce.dev"
-
   # The Chainguard IAM group ID (not the name!) from which we expect to receive
   # events. This is used to authenticate that the Chainguard events are intended
   # for you, and not another user.
