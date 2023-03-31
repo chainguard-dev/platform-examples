@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/chainguard-dev/enforce-events/pkg/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/go-github/v43/github"
 	"github.com/kelseyhightower/envconfig"
 	"golang.org/x/oauth2"
@@ -35,48 +35,13 @@ func main() {
 	if err := envconfig.Process("", &env); err != nil {
 		log.Fatalf("failed to process env var: %s", err)
 	}
-	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
-		// We need to infuse the request onto context, so we can
-		// authenticate requests.
-		cehttp.WithRequestDataAtContextMiddleware())
-	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
-	}
 	ctx := context.Background()
 
-	// Construct a verifier that ensures tokens are issued by the Chainguard
-	// issuer we expect and are intended for a customer webhook.
-	provider, err := oidc.NewProvider(ctx, env.Issuer)
-	if err != nil {
-		log.Fatalf("failed to create provider: %v", err)
-	}
-	verifier := provider.Verifier(&oidc.Config{
-		ClientID: "customer",
-	})
-
-	ts := oauth2.StaticTokenSource(
+	client := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: strings.TrimSpace(env.GithubToken)},
-	)
-	tc := oauth2.NewClient(ctx, ts)
+	)))
 
-	client := github.NewClient(tc)
-
-	receiver := func(ctx context.Context, event cloudevents.Event) error {
-		// We expect Chainguard webhooks to pass an Authorization header.
-		auth := strings.TrimPrefix(cehttp.RequestDataFromContext(ctx).Header.Get("Authorization"), "Bearer ")
-		if auth == "" {
-			return cloudevents.NewHTTPResult(http.StatusUnauthorized, "Unauthorized")
-		}
-
-		// Verify that the token is well-formed, and in fact intended for us!
-		if tok, err := verifier.Verify(ctx, auth); err != nil {
-			return cloudevents.NewHTTPResult(http.StatusForbidden, "unable to verify token: %w", err)
-		} else if !strings.HasPrefix(tok.Subject, "webhook:") {
-			return cloudevents.NewHTTPResult(http.StatusForbidden, "subject should be from the Chainguard webhook component, got: %s", tok.Subject)
-		} else if group := strings.TrimPrefix(tok.Subject, "webhook:"); group != env.Group {
-			return cloudevents.NewHTTPResult(http.StatusForbidden, "this token is intended for %s, wanted one for %s", group, env.Group)
-		}
-
+	receiver := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
 		// We are handling a specific event type, so filter the rest.
 		if event.Type() != ChangedEventType {
 			return nil
@@ -118,8 +83,15 @@ func main() {
 		}
 
 		return nil
-	}
+	})
 
+	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
+		// We need to infuse the request onto context, so we can
+		// authenticate requests.
+		cehttp.WithRequestDataAtContextMiddleware())
+	if err != nil {
+		log.Fatalf("failed to create client, %v", err)
+	}
 	if err := c.StartReceiver(ctx, func(ctx context.Context, event cloudevents.Event) error {
 		// This thunk simply wraps the main receiver in one that logs any errors
 		// we encounter.

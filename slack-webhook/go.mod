@@ -2,15 +2,18 @@ module github.com/chainguard-dev/enforce-events/slack-webhook
 
 go 1.20
 
+replace github.com/chainguard-dev/enforce-events => ../
+
 require (
+	github.com/chainguard-dev/enforce-events v0.0.0-00010101000000-000000000000
 	github.com/cloudevents/sdk-go/v2 v2.13.0
-	github.com/coreos/go-oidc/v3 v3.5.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/slack-go/slack v0.12.1
 	k8s.io/api v0.26.3
 )
 
 require (
+	github.com/coreos/go-oidc/v3 v3.5.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
