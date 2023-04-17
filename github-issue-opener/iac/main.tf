@@ -42,9 +42,10 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
 }
 
 resource "ko_build" "image" {
-  base_image  = "ghcr.io/distroless/static"
+  base_image  = "cgr.dev/chainguard/static"
   importpath  = "github.com/chainguard-dev/enforce-events/github-issue-opener/cmd/app"
   working_dir = path.module
+  repo        = "${var.location}-docker.pkg.dev/${var.project_id}/${var.name}/github-issue-opener"
 }
 
 resource "google_cloud_run_service" "gh-iss" {
