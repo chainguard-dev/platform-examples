@@ -42,9 +42,10 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
 }
 
 resource "ko_build" "image" {
-  base_image  = "ghcr.io/distroless/static"
+  base_image  = "cgr.dev/chainguard/static"
   importpath  = "github.com/chainguard-dev/enforce-events/slack-webhook/cmd/app"
   working_dir = path.module
+  repo        = "${var.location}-docker.pkg.dev/${var.project_id}/${var.name}/slack-notifier"
 }
 
 resource "google_cloud_run_service" "slack-notifier" {
