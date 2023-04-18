@@ -8,7 +8,7 @@ require (
 	github.com/chainguard-dev/enforce-events v0.0.0-00010101000000-000000000000
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/slack-go/slack v0.12.1
+	github.com/slack-go/slack v0.12.2
 	k8s.io/api v0.26.3
 )
 
