@@ -6,7 +6,7 @@ replace github.com/chainguard-dev/enforce-events => ../
 
 require (
 	github.com/chainguard-dev/enforce-events v0.0.0-00010101000000-000000000000
-	github.com/cloudevents/sdk-go/v2 v2.13.0
+	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	golang.org/x/oauth2 v0.7.0
