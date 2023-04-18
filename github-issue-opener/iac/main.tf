@@ -41,6 +41,14 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
   member    = "serviceAccount:${google_service_account.gh-iss-opener.email}"
 }
 
+resource "google_artifact_registry_repository" "gh-iss-repo" {
+  project       = var.project_id
+  location      = var.location
+  repository_id = var.name
+  description   = "Enforce Events GitHub Issue Opener Repository"
+  format        = "DOCKER"
+}
+
 resource "ko_build" "image" {
   base_image  = "cgr.dev/chainguard/static"
   importpath  = "github.com/chainguard-dev/enforce-events/github-issue-opener/cmd/app"
