@@ -41,10 +41,19 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
   member    = "serviceAccount:${google_service_account.slack-notifier.email}"
 }
 
+resource "google_artifact_registry_repository" "slack-notifier-repo" {
+  project       = var.project_id
+  location      = var.location
+  repository_id = var.name
+  description   = "Enforce Events Slack Notifier Repository"
+  format        = "DOCKER"
+}
+
 resource "ko_build" "image" {
-  base_image  = "ghcr.io/distroless/static"
+  base_image  = "cgr.dev/chainguard/static"
   importpath  = "github.com/chainguard-dev/enforce-events/slack-webhook/cmd/app"
   working_dir = path.module
+  repo        = "${var.location}-docker.pkg.dev/${var.project_id}/${var.name}/slack-notifier"
 }
 
 resource "google_cloud_run_service" "slack-notifier" {
