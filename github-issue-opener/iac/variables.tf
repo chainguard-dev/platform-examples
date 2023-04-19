@@ -37,5 +37,5 @@ variable "github_repo" {
 variable "labels" {
   type        = string
   description = "The labels (comma separated) to open issues with for policy violations."
-  default     = "enforce-events"
+  default     = ""
 }
