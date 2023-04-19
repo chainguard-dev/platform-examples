@@ -47,7 +47,7 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
 
 resource "ko_build" "image" {
   base_image  = "cgr.dev/chainguard/static:latest-glibc"
-  importpath = var.ko_build_importpath
+  importpath  = var.ko_build_importpath
   working_dir = path.module
   repo        = "gcr.io/${var.project_id}/${var.ko_build_importpath}"
 }
