@@ -9,6 +9,10 @@ terraform {
   }
 }
 
+locals {
+  importpath = "github.com/chainguard-dev/enforce-events/slack-webhook/cmd/app"
+}
+
 resource "google_service_account" "slack-notifier" {
   project    = var.project_id
   account_id = "${var.name}-slack-notifier"
@@ -43,8 +47,10 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
 
 resource "ko_build" "image" {
   base_image  = "ghcr.io/distroless/static"
-  importpath  = "github.com/chainguard-dev/enforce-events/slack-webhook/cmd/app"
+  importpath  = local.importpath
   working_dir = path.module
+  # repo overrides KO_DOCKER_REPO environment variable
+  repo        = "gcr.io/${var.project_id}/${local.importpath}"
 }
 
 resource "google_cloud_run_service" "slack-notifier" {

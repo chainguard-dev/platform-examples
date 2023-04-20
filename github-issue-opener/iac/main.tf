@@ -9,6 +9,10 @@ terraform {
   }
 }
 
+locals {
+  importpath = "github.com/chainguard-dev/enforce-events/github-issue-opener/cmd/app"
+}
+
 resource "google_service_account" "gh-iss-opener" {
   project    = var.project_id
   account_id = "${var.name}-issue-opener"
@@ -42,9 +46,11 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
 }
 
 resource "ko_build" "image" {
-  base_image  = "ghcr.io/distroless/static"
-  importpath  = "github.com/chainguard-dev/enforce-events/github-issue-opener/cmd/app"
+  base_image  = "cgr.dev/chainguard/static:latest-glibc"
+  importpath  = local.importpath
   working_dir = path.module
+  # repo overrides KO_DOCKER_REPO environment variable
+  repo        = "gcr.io/${var.project_id}/${local.importpath}"
 }
 
 resource "google_cloud_run_service" "gh-iss" {
