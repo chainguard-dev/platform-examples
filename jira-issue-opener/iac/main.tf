@@ -1,5 +1,8 @@
 terraform {
   required_providers {
+    cosign = {
+      source = "chainguard-dev/cosign"
+    }
     ko = {
       source = "ko-build/ko"
     }
@@ -45,11 +48,44 @@ resource "google_secret_manager_secret_iam_member" "grant-secret-access" {
   member    = "serviceAccount:${google_service_account.jira-iss-opener.email}"
 }
 
+data "cosign_verify" "base-image" {
+  image = "cgr.dev/chainguard/static:latest-glibc"
+
+  policy = jsonencode({
+    apiVersion = "policy.sigstore.dev/v1beta1"
+    kind       = "ClusterImagePolicy"
+    metadata = {
+      name = "chainguard-images-are-signed"
+    }
+    spec = {
+      images = [{
+        glob = "cgr.dev/**"
+      }]
+      authorities = [{
+        keyless = {
+          url = "https://fulcio.sigstore.dev"
+          identities = [{
+            issuer  = "https://token.actions.githubusercontent.com"
+            subject = "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main"
+          }]
+        }
+        ctlog = {
+          url = "https://rekor.sigstore.dev"
+        }
+      }]
+    }
+  })
+}
+
 resource "ko_build" "image" {
-  base_image  = "cgr.dev/chainguard/static"
+  base_image  = data.cosign_verify.base-image.verified_ref
   importpath  = local.importpath
   working_dir = path.module
   repo        = "gcr.io/${var.project_id}/${local.importpath}"
+}
+
+resource "cosign_sign" "image" {
+  image = ko_build.image.image_ref
 }
 
 resource "google_cloud_run_service" "jira-iss" {
@@ -61,7 +97,7 @@ resource "google_cloud_run_service" "jira-iss" {
     spec {
       service_account_name = google_service_account.jira-iss-opener.email
       containers {
-        image = ko_build.image.image_ref
+        image = cosign_sign.image.signed_ref
         env {
           name  = "ISSUER_URL"
           value = "https://issuer.${var.env}"
