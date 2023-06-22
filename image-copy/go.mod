@@ -1,10 +1,10 @@
-module github.com/chainguard-dev/enforce-events
+module github.com/chainguard-dev/enforce-events/image-copy
 
 go 1.20
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	github.com/cloudevents/sdk-go/v2 v2.13.0
+	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/google/go-containerregistry v0.15.2
 	github.com/kelseyhightower/envconfig v1.4.0
