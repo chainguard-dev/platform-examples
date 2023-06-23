@@ -1,8 +1,8 @@
-## Github Issue Opener
+## GitHub Issue Opener
 
 This demo application shows how users can write a very simple application that
 authenticates Chainguard webhook requests for continuous verification policy
-violations, and turns them into Github issues.
+violations, and turns them into GitHub issues.
 
 ### Usage
 
@@ -42,7 +42,7 @@ module "issue-opener" {
 ```
 
 Once things have been provisioned, this module outputs a `secret-command`
-containing the command to run to upload your Github "personal access token" to
+containing the command to run to upload your GitHub "personal access token" to
 the Google Secret Manager secret the application will use, looking something
 like this:
 

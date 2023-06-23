@@ -1,4 +1,8 @@
 # Enforce Events
 
-- [Github Issue Opener](./github-issue-opener/README.md)
+This repo holds a number of example apps demonstrating various [Chainguard Events](https://edu.chainguard.dev/chainguard/chainguard-enforce/reference/events/)
+
+- [GitHub Issue Opener](./github-issue-opener/README.md)
 - [Slack Webhook](./slack-webhook/README.md)
+- [Jira Issuer Opener](./jira-issue-opener/)
+- [Image Copier](./image-copy/)
