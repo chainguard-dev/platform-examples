@@ -1,4 +1,4 @@
-# `image-copy`
+# `image-copy-gcr`
 
 This sets up a Cloud Run app to listen for [`registry.push` events](https://edu.chainguard.dev/chainguard/chainguard-enforce/reference/events/#service-registry---push) to a private Chainguard Registry group, and mirrors those new images to a repository in Google Artifact Registry.
 
@@ -9,7 +9,7 @@ it like this:
 
 ```
 module "image-copy" {
-  source = "github.com/chainguard-dev/enforce-events//image-copy/iac"
+  source = "github.com/chainguard-dev/enforce-events//image-copy-gcr/iac"
 
   # name is used to prefix resources created by this demo application
   # where possible.

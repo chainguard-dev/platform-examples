@@ -1,4 +1,4 @@
-module github.com/chainguard-dev/enforce-events/image-copy
+module github.com/chainguard-dev/enforce-events/image-copy-gcr
 
 go 1.20
 
