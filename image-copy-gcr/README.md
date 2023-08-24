@@ -28,8 +28,8 @@ module "image-copy" {
   group = "<group-id>"
 
   # This is the location in Artifact Registry where images will be mirrored.
-  # For example: pushes to cgr.dev/<group>/foo will be mirrored to
-  # <location>-docker.pkg.dev/<project_id>/<dst_repo>/foo.
+  # For example: pushes to cgr.dev/<group>/foo:1.2.3 will be mirrored to
+  # <location>-docker.pkg.dev/<project_id>/<dst_repo>/foo:1.2.3
   dst_repo = "mirrored/images"
 
   # Location of the Artifact Registry repository, and the Cloud Run subscriber.
@@ -46,3 +46,20 @@ The Terraform does everything:
 - sets up a Chainguard Identity with permissions to pull from the private cgr.dev repo
 - allows the Cloud Run service's SA to assume the puller identity
 - sets up a subscription to notify the Cloud Run service when pushes happen to cgr.dev
+
+### Setup
+
+```sh
+gcloud auth application-default login
+chainctl auth login
+terraform init
+terraform apply
+```
+
+When the resources are created, any images that are pushed to your group will be mirrored to the GCR repository.
+
+The Cloud Run app has minimal permissions: it's only allowed to push images.
+
+The Chainguard identity also has minimal permissions: it only has permission to pull from the source repo.
+
+To tear down resources, run `terraform destroy`.
