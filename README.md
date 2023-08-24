@@ -6,3 +6,4 @@ This repo holds a number of example apps demonstrating various [Chainguard Event
 - [Slack Webhook](./slack-webhook/README.md)
 - [Jira Issuer Opener](./jira-issue-opener/)
 - [GCR Image Copier](./image-copy-gcr/)
+- [ECR Image Copier](./image-copy-ecr/)
