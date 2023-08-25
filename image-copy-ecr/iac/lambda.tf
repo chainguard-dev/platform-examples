@@ -65,7 +65,7 @@ resource "aws_ecr_repository_policy" "policy" {
 
 resource "aws_ecr_repository" "repo" {
   name                 = var.dst_repo
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = var.immutable_tags ? "IMMUTABLE" : "MUTABLE"
 
   image_scanning_configuration {
     scan_on_push = false
@@ -108,12 +108,13 @@ resource "aws_lambda_function" "lambda" {
 
   environment {
     variables = {
-      GROUP         = var.group
-      IDENTITY      = chainguard_identity.aws.id
-      ISSUER_URL    = "https://issuer.enforce.dev"
-      DST_REPO      = var.dst_repo
-      FULL_DST_REPO = aws_ecr_repository.repo.repository_url
-      REGION        = data.aws_region.current.name
+      GROUP          = var.group
+      IDENTITY       = chainguard_identity.aws.id
+      ISSUER_URL     = "https://issuer.enforce.dev"
+      DST_REPO       = var.dst_repo
+      FULL_DST_REPO  = aws_ecr_repository.repo.repository_url
+      REGION         = data.aws_region.current.name
+      IMMUTABLE_TAGS = var.immutable_tags
     }
   }
 }

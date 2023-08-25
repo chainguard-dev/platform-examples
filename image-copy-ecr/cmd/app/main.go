@@ -33,12 +33,13 @@ import (
 var amazonKeychain authn.Keychain = authn.NewKeychainFromHelper(ecrcreds.NewECRHelper(ecrcreds.WithLogger(log.Writer())))
 
 var env = struct {
-	Issuer      string `envconfig:"ISSUER_URL" required:"true"`
-	Group       string `envconfig:"GROUP" required:"true"`
-	Identity    string `envconfig:"IDENTITY" required:"true"`
-	Region      string `envconfig:"REGION" required:"true"`
-	DstRepo     string `envconfig:"DST_REPO" required:"true"`
-	FullDstRepo string `envconfig:"FULL_DST_REPO" required:"true"`
+	Issuer        string `envconfig:"ISSUER_URL" required:"true"`
+	Group         string `envconfig:"GROUP" required:"true"`
+	Identity      string `envconfig:"IDENTITY" required:"true"`
+	Region        string `envconfig:"REGION" required:"true"`
+	DstRepo       string `envconfig:"DST_REPO" required:"true"`
+	FullDstRepo   string `envconfig:"FULL_DST_REPO" required:"true"`
+	ImmutableTags bool   `envconfig:"IMMUTABLE_TAGS" required:"true"`
 }{}
 
 func init() {
@@ -104,11 +105,16 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 		return "", fmt.Errorf("failed to load configuration, %w", err)
 	}
 	repo := filepath.Join(env.DstRepo, filepath.Base(data.Body.Repository))
+	tagMutability := types.ImageTagMutabilityMutable
+	if env.ImmutableTags {
+		tagMutability = types.ImageTagMutabilityImmutable
+	}
 	if _, err := ecr.New(ecr.Options{
 		Region:      env.Region,
 		Credentials: cfg.Credentials,
 	}).CreateRepository(ctx, &ecr.CreateRepositoryInput{
-		RepositoryName: &repo,
+		RepositoryName:     &repo,
+		ImageTagMutability: tagMutability,
 	}); err != nil {
 		var rae *types.RepositoryAlreadyExistsException
 		if errors.As(err, &rae) {
@@ -123,12 +129,19 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	// Sync src:tag to dst:tag.
 	src := "cgr.dev/" + data.Body.Repository + ":" + data.Body.Tag
 	dst := filepath.Join(env.FullDstRepo, filepath.Base(data.Body.Repository)) + ":" + data.Body.Tag
+	kc := authn.NewMultiKeychain(
+		amazonKeychain,
+		cgKeychain{env.Issuer, env.Region, env.Identity},
+	)
+	if env.ImmutableTags {
+		dig, err := crane.Digest(src, crane.WithAuthFromKeychain(kc))
+		if err != nil {
+			return "", fmt.Errorf("getting digest for %s: %w", src, err)
+		}
+		dst += "-" + strings.TrimPrefix(dig, "sha256:")[:6]
+	}
 	log.Printf("Copying %s to %s...", src, dst)
-	if err := crane.Copy(src, dst,
-		crane.WithAuthFromKeychain(authn.NewMultiKeychain(
-			amazonKeychain,
-			cgKeychain{env.Issuer, env.Region, env.Identity},
-		))); err != nil {
+	if err := crane.Copy(src, dst, crane.WithAuthFromKeychain(kc)); err != nil {
 		return "", fmt.Errorf("copying image: %w", err)
 	}
 	log.Printf("Copied %s to %s", src, dst)
