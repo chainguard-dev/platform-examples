@@ -9,7 +9,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/slack-go/slack v0.12.3
-	k8s.io/api v0.28.3
+	k8s.io/api v0.28.4
 )
 
 require (
@@ -33,10 +33,10 @@ require (
 	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apimachinery v0.28.3 // indirect
+	k8s.io/apimachinery v0.28.4 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
