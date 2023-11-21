@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"chainguard.dev/sdk/pkg/events"
+	"chainguard.dev/sdk/pkg/events/registry"
 	"cloud.google.com/go/compute/metadata"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
@@ -96,19 +98,23 @@ func main() {
 		}
 
 		// We are handling a specific event type, so filter the rest.
-		if event.Type() != PushEventType {
+		if event.Type() != registry.PushedEventType {
 			return nil
 		}
 
-		data := Occurrence{}
+		data := events.Occurrence{}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
 		log.Printf("got event: %+v", data)
 
-		src := "cgr.dev/" + data.Body.Repository
-		dst := env.DstRepo + "/" + filepath.Base(data.Body.Repository)
+		body, ok := data.Body.(registry.PushEvent)
+		if !ok {
+			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unexpected event body type: %T", data.Body)
+		}
+		src := "cgr.dev/" + body.Repository
+		dst := env.DstRepo + "/" + filepath.Base(body.Repository)
 		log.Printf("Copying %s to %s...", src, dst)
 		if err := crane.Copy(src, dst,
 			crane.WithAuthFromKeychain(authn.NewMultiKeychain(

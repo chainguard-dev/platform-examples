@@ -18,6 +18,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"chainguard.dev/sdk/pkg/auth/aws"
+	cgevents "chainguard.dev/sdk/pkg/events"
+	"chainguard.dev/sdk/pkg/events/registry"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -81,20 +84,24 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	// - It's a registry push event.
 	// - It's not a push error.
 	// - It's a tag push.
-	if levent.Headers["ce-type"] != PushEventType {
+	if levent.Headers["ce-type"] != registry.PushedEventType {
 		log.Printf("event type is %q, skipping", levent.Headers["ce-type"])
 		return "", nil
 	}
-	data := Occurrence{}
+	data := cgevents.Occurrence{}
 	if err := json.Unmarshal([]byte(levent.Body), &data); err != nil {
 		return "", fmt.Errorf("unable to unmarshal event: %w", err)
 	}
-	if data.Body.Error != nil {
-		log.Printf("event body has error, skipping: %+v", data.Body.Error)
+	body, ok := data.Body.(registry.PushEvent)
+	if !ok {
+		return "", fmt.Errorf("event body is not a push event, skipping: %+v", body)
+	}
+	if body.Error != nil {
+		log.Printf("event body has error, skipping: %+v", body.Error)
 		return "", nil
 	}
-	if data.Body.Tag == "" || data.Body.Type != "manifest" {
-		log.Printf("event body is not a tag push, skipping: %q %q", data.Body.Tag, data.Body.Type)
+	if body.Tag == "" || body.Type != "manifest" {
+		log.Printf("event body is not a tag push, skipping: %q %q", body.Tag, body.Type)
 		return "", nil
 	}
 
@@ -104,7 +111,7 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	if err != nil {
 		return "", fmt.Errorf("failed to load configuration, %w", err)
 	}
-	repo := filepath.Join(env.DstRepo, filepath.Base(data.Body.Repository))
+	repo := filepath.Join(env.DstRepo, filepath.Base(body.Repository))
 	tagMutability := types.ImageTagMutabilityMutable
 	if env.ImmutableTags {
 		tagMutability = types.ImageTagMutabilityImmutable
@@ -127,8 +134,8 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	}
 
 	// Sync src:tag to dst:tag.
-	src := "cgr.dev/" + data.Body.Repository + ":" + data.Body.Tag
-	dst := filepath.Join(env.FullDstRepo, filepath.Base(data.Body.Repository)) + ":" + data.Body.Tag
+	src := "cgr.dev/" + body.Repository + ":" + body.Tag
+	dst := filepath.Join(env.FullDstRepo, filepath.Base(body.Repository)) + ":" + body.Tag
 	kc := authn.NewMultiKeychain(
 		amazonKeychain,
 		cgKeychain{env.Issuer, env.Region, env.Identity},
@@ -171,7 +178,7 @@ func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
 		return nil, fmt.Errorf("failed to retrieve credentials, %w", err)
 	}
 
-	awsTok, err := generateToken(ctx, creds, k.region, k.issuer, k.identity)
+	awsTok, err := aws.GenerateToken(ctx, creds, k.issuer, k.identity)
 	if err != nil {
 		return nil, fmt.Errorf("generating AWS token: %w", err)
 	}
