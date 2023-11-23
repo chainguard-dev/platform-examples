@@ -14,7 +14,7 @@ require (
 require (
 	github.com/coreos/go-oidc/v3 v3.6.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
