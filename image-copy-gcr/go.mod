@@ -9,6 +9,7 @@ replace github.com/chainguard-dev/enforce-events => ../
 require (
 	chainguard.dev/sdk v0.1.0
 	cloud.google.com/go/compute/metadata v0.2.3
+	github.com/chainguard-dev/enforce-events v0.0.0-20231121174021-bd68cdb48f4f
 	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/google/go-containerregistry v0.16.1
