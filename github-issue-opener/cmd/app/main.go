@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/chainguard-dev/enforce-events/pkg/receiver"
+	"chainguard.dev/sdk/pkg/events/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/google/go-github/v43/github"
@@ -41,7 +41,7 @@ func main() {
 		&oauth2.Token{AccessToken: strings.TrimSpace(env.GithubToken)},
 	)))
 
-	receiver := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
+	receiver, err := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
 		// We are handling a specific event type, so filter the rest.
 		if event.Type() != ChangedEventType {
 			return nil
@@ -84,6 +84,9 @@ func main() {
 
 		return nil
 	})
+	if err != nil {
+		log.Fatalf("failed to create receiver: %v", err)
+	}
 
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
 		// We need to infuse the request onto context, so we can

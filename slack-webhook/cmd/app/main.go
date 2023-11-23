@@ -13,7 +13,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 
-	"github.com/chainguard-dev/enforce-events/pkg/receiver"
+	"chainguard.dev/sdk/pkg/events/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/kelseyhightower/envconfig"
@@ -56,7 +56,7 @@ func main() {
 
 	ctx := context.Background()
 
-	receiver := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
+	receiver, err := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
 		log.Printf("Processing Event Type: %v", event.Type())
 
 		switch EventType := event.Type(); EventType {
@@ -99,6 +99,9 @@ func main() {
 			return nil
 		}
 	})
+	if err != nil {
+		log.Fatalf("failed to create receiver: %v", err)
+	}
 
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
 		cloudevents.WithHeader("User-Agent", "Chainguard Enforce"),

@@ -7,11 +7,9 @@ toolchain go1.21.0
 replace github.com/chainguard-dev/enforce-events => ../
 
 require (
-	chainguard.dev/sdk v0.1.0
+	chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad
 	cloud.google.com/go/compute/metadata v0.2.3
-	github.com/chainguard-dev/enforce-events v0.0.0-20231121174021-bd68cdb48f4f
 	github.com/cloudevents/sdk-go/v2 v2.14.0
-	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/google/go-containerregistry v0.16.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	google.golang.org/api v0.149.0
@@ -20,6 +18,7 @@ require (
 require (
 	cloud.google.com/go/compute v1.23.2 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
+	github.com/coreos/go-oidc/v3 v3.7.0 // indirect
 	github.com/docker/cli v24.0.0+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v24.0.0+incompatible // indirect

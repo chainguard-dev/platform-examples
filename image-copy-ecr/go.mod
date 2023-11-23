@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	chainguard.dev/sdk v0.1.0
+	chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad
 	github.com/aws/aws-lambda-go v1.41.0
 	github.com/aws/aws-sdk-go-v2/config v1.19.1
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.18.14
