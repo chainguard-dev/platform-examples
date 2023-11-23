@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"strings"
 
+	"chainguard.dev/sdk/pkg/events"
+	"chainguard.dev/sdk/pkg/events/policy"
 	"chainguard.dev/sdk/pkg/events/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
@@ -50,25 +52,29 @@ func main() {
 
 	receiver, err := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
 		// We are handling a specific event type, so filter the rest.
-		if event.Type() != ChangedEventType {
+		if event.Type() != policy.ChangedEventType {
 			return nil
 		}
 
-		data := Occurrence{}
+		data := events.Occurrence{}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
 		}
 
-		for name, pol := range data.Body.Policies {
+		body, ok := data.Body.(policy.ImagePolicyRecord)
+		if !ok {
+			return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal body: %v", data.Body)
+		}
+		for name, pol := range body.Policies {
 			if pol.Valid {
 				// Not in violation of policy
 				continue
 			}
 			switch pol.Change {
-			case ImprovedChange:
+			case policy.ImprovedChange:
 				// TODO: How is this an improvement?
 				continue
-			case NewChange, DegradedChange:
+			case policy.NewChange, policy.DegradedChange:
 				// We want to fire on these events.
 			}
 
@@ -76,8 +82,8 @@ func main() {
 				Fields: &jira.IssueFields{
 					Description: strings.Join(
 						[]string{
-							fmt.Sprintf("Image:        `%s`", data.Body.ImageID),
-							fmt.Sprintf("Cluster       `%s`", data.Body.ClusterID),
+							fmt.Sprintf("Image:        `%s`", body.ImageID),
+							fmt.Sprintf("Cluster       `%s`", body.ClusterID),
 							fmt.Sprintf("Policy:       `%s`", name),
 							fmt.Sprintf("Last Checked: `%v`", pol.LastChecked.Time),
 							fmt.Sprintf("Diagnostic:   `%v`", pol.Diagnostic),

@@ -13,6 +13,9 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 
+	"chainguard.dev/sdk/pkg/events"
+	"chainguard.dev/sdk/pkg/events/admission"
+	"chainguard.dev/sdk/pkg/events/policy"
 	"chainguard.dev/sdk/pkg/events/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
@@ -60,9 +63,9 @@ func main() {
 		log.Printf("Processing Event Type: %v", event.Type())
 
 		switch EventType := event.Type(); EventType {
-		case ChangedEventType:
-			var ipr = ImagePolicyRecord{}
-			occ := Occurrence{
+		case policy.ChangedEventType:
+			var ipr = policy.ImagePolicyRecord{}
+			occ := events.Occurrence{
 				Body: &ipr,
 			}
 			if err := event.DataAs(&occ); err != nil {
@@ -76,9 +79,9 @@ func main() {
 			}
 			return nil
 
-		case AdmissionEventType:
+		case admission.ReviewEventType:
 			admission := admissionv1.AdmissionReview{}
-			occ := Occurrence{
+			occ := events.Occurrence{
 				Body: &admission,
 			}
 			if err := event.DataAs(&occ); err != nil {
@@ -124,7 +127,7 @@ func main() {
 	}
 }
 
-func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *slack.WebhookMessage {
+func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr policy.ImagePolicyRecord) *slack.WebhookMessage {
 	divSection := slack.NewDividerBlock()
 
 	// Header Section
@@ -151,17 +154,17 @@ func (e *envConfig) imagePolicyRecordToWebhookMessage(ipr ImagePolicyRecord) *sl
 
 		var body string
 		switch state.Change {
-		case NewChange:
+		case policy.NewChange:
 			if state.Valid {
 				emoji = ":star:"
 			} else {
 				emoji = ":x:"
 			}
 			body = fmt.Sprintf("\t%s [%s] Policy _%s_ now applies and is *%s*", emoji, name, name, valid)
-		case DegradedChange:
+		case policy.DegradedChange:
 			emoji = ":fire:"
 			body = fmt.Sprintf("\t%s [%s] Degraded change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid)
-		case ImprovedChange:
+		case policy.ImprovedChange:
 			emoji = ":star-struck:"
 			body = fmt.Sprintf("\t%s [%s] Improved change detected for policy _%s_ and is now *%s*.", emoji, name, name, valid)
 		default:
@@ -224,17 +227,17 @@ func (e *envConfig) admissionReviewToWebhookMessage(adm admissionv1.AdmissionRev
 
 }
 
-func (e *envConfig) shouldFilterNotification(state *State) bool {
+func (e *envConfig) shouldFilterNotification(state *policy.State) bool {
 	switch e.NotifyLevel {
 	case warn:
 		// Filter out improvement changes
-		if ImprovedChange == state.Change {
+		if policy.ImprovedChange == state.Change {
 			return true
 		}
 		fallthrough
 	case info:
 		// Filter out new passing
-		if state.Valid && NewChange == state.Change {
+		if state.Valid && policy.NewChange == state.Change {
 			return true
 		}
 		fallthrough
