@@ -16,9 +16,9 @@ import (
 	"path/filepath"
 
 	"chainguard.dev/sdk/pkg/events"
+	"chainguard.dev/sdk/pkg/events/receiver"
 	"chainguard.dev/sdk/pkg/events/registry"
 	"cloud.google.com/go/compute/metadata"
-	"github.com/chainguard-dev/enforce-events/pkg/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -62,7 +62,7 @@ func main() {
 	log.Printf("sa: %s", sa)
 
 	ctx := context.Background()
-	receiver := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
+	receiver, err := receiver.New(ctx, env.Issuer, env.Group, func(ctx context.Context, event cloudevents.Event) error {
 		// We are handling a specific event type, so filter the rest.
 		if event.Type() != registry.PushedEventType {
 			return nil
@@ -92,6 +92,9 @@ func main() {
 		log.Println("Copied!")
 		return nil
 	})
+	if err != nil {
+		log.Fatalf("failed to create receiver: %v", err)
+	}
 
 	c, err := cloudevents.NewClientHTTP(cloudevents.WithPort(env.Port),
 		// We need to infuse the request onto context, so we can

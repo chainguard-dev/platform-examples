@@ -1,5 +1,5 @@
-chainguard.dev/sdk v0.1.0 h1:ba56z14eqANCMRc6P84GLu6RzoYAtOe+tMW9JIk1ves=
-chainguard.dev/sdk v0.1.0/go.mod h1:BMJCMuWH5SOZoNo1yZIU+l5l7BassMFq8ealOwFqI9Y=
+chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad h1:wd/U2GDEIGZWNX2Zd948OdD9lLyue0DSvZiPuetHGt0=
+chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad/go.mod h1:1ezyJ9Zvbieaq9NjtZYM4JmWvDzF+h/c/V7kC1O1bsw=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go/compute v1.23.2 h1:nWEMDhgbBkBJjfpVySqU4jgWdc22PLR0o4vEexZHers=
 cloud.google.com/go/compute v1.23.2/go.mod h1:JJ0atRC0J/oWYiiVBmsSsrRnh92DhZPG4hFDcR04Rns=
@@ -14,8 +14,8 @@ github.com/cloudevents/sdk-go/v2 v2.14.0/go.mod h1:xDmKfzNjM8gBvjaF8ijFjM1VYOVUE
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/containerd/stargz-snapshotter/estargz v0.14.3 h1:OqlDCK3ZVUO6C3B/5FSkDwbkEETK84kQgEeFwDC+62k=
 github.com/containerd/stargz-snapshotter/estargz v0.14.3/go.mod h1:KY//uOCIkSuNAHhJogcZtrNHdKrA99/FCCRjE3HD36o=
-github.com/coreos/go-oidc/v3 v3.6.0 h1:AKVxfYw1Gmkn/w96z0DbT/B/xFnzTd3MkZvWLjF4n/o=
-github.com/coreos/go-oidc/v3 v3.6.0/go.mod h1:ZpHUsHBucTUj6WOkrP4E20UPynbLZzhTQ1XKCXkxyPc=
+github.com/coreos/go-oidc/v3 v3.7.0 h1:FTdj0uexT4diYIPlF4yoFVI5MRO1r5+SEcIpEw9vC0o=
+github.com/coreos/go-oidc/v3 v3.7.0/go.mod h1:yQzSCqBnK3e6Fs5l+f5i0F8Kwf0zpH9bPEsbY00KanM=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

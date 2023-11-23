@@ -1,5 +1,5 @@
-chainguard.dev/sdk v0.1.0 h1:ba56z14eqANCMRc6P84GLu6RzoYAtOe+tMW9JIk1ves=
-chainguard.dev/sdk v0.1.0/go.mod h1:BMJCMuWH5SOZoNo1yZIU+l5l7BassMFq8ealOwFqI9Y=
+chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad h1:wd/U2GDEIGZWNX2Zd948OdD9lLyue0DSvZiPuetHGt0=
+chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad/go.mod h1:1ezyJ9Zvbieaq9NjtZYM4JmWvDzF+h/c/V7kC1O1bsw=
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/aws/aws-lambda-go v1.41.0 h1:l/5fyVb6Ud9uYd411xdHZzSf2n86TakxzpvIoz7l+3Y=
 github.com/aws/aws-lambda-go v1.41.0/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
