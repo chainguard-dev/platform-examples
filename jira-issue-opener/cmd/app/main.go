@@ -56,11 +56,11 @@ func main() {
 			return nil
 		}
 
-		data := events.Occurrence{Body: policy.ImagePolicyRecord{}}
+		body := &policy.ImagePolicyRecord{}
+		data := events.Occurrence{Body: body}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 		}
-		body := data.Body
 		for name, pol := range body.Policies {
 			if pol.Valid {
 				// Not in violation of policy

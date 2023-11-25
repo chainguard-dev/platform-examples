@@ -49,11 +49,11 @@ func main() {
 			return nil
 		}
 
-		data := events.Occurrence{Body: policy.ImagePolicyRecord{}}
+		body := &policy.ImagePolicyRecord{}
+		data := events.Occurrence{Body: body}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 		}
-		body := data.Body
 		for name, pol := range body.Policies {
 			if pol.Valid {
 				// Not in violation of policy
@@ -71,8 +71,8 @@ func main() {
 				Title:  ptr(fmt.Sprintf("Policy %s failed", name)),
 				Labels: &env.Labels,
 				Body: ptr(strings.Join([]string{
-					fmt.Sprintf("Image:        `%s`", data.Body.ImageID),
-					fmt.Sprintf("Cluster       `%s`", data.Body.ClusterID),
+					fmt.Sprintf("Image:        `%s`", body.ImageID),
+					fmt.Sprintf("Cluster       `%s`", body.ClusterID),
 					fmt.Sprintf("Policy:       `%s`", name),
 					fmt.Sprintf("Last Checked: `%v`", pol.LastChecked.Time),
 					fmt.Sprintf("Diagnostic:   `%v`", pol.Diagnostic),

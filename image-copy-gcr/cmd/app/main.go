@@ -68,13 +68,12 @@ func main() {
 			return nil
 		}
 
-		data := events.Occurrence{Body: registry.PushEvent{}}
+		body := &registry.PushEvent{}
+		data := events.Occurrence{Body: body}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 		}
-
 		log.Printf("got event: %+v", data)
-		body := data.Body
 		src := "cgr.dev/" + body.Repository
 		dst := env.DstRepo + "/" + filepath.Base(body.Repository)
 		log.Printf("Copying %s to %s...", src, dst)
