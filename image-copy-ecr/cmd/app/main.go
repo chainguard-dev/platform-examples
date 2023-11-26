@@ -6,21 +6,18 @@ SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 
 	"chainguard.dev/sdk/pkg/auth/aws"
 	cgevents "chainguard.dev/sdk/pkg/events"
 	"chainguard.dev/sdk/pkg/events/registry"
+	"chainguard.dev/sdk/pkg/sts"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -88,8 +85,8 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 		log.Printf("event type is %q, skipping", levent.Headers["ce-type"])
 		return "", nil
 	}
-	body := &registry.PushEvent{}
-	data := cgevents.Occurrence{Body: body}
+	body := registry.PushEvent{}
+	data := cgevents.Occurrence{Body: &body}
 	if err := json.Unmarshal([]byte(levent.Body), &data); err != nil {
 		return "", fmt.Errorf("unable to unmarshal event: %w", err)
 	}
@@ -180,35 +177,13 @@ func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
 		return nil, fmt.Errorf("generating AWS token: %w", err)
 	}
 
-	url := (&url.URL{
-		Scheme: "https",
-		Host:   strings.TrimPrefix(k.issuer, "https://"),
-		Path:   "/sts/exchange",
-		RawQuery: url.Values{
-			"aud":      []string{res.RegistryStr()},
-			"identity": []string{k.identity},
-		}.Encode(),
-	}).String()
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+	exch := sts.New(k.issuer, res.RegistryStr(), sts.WithIdentity(k.identity))
+	cgtok, err := exch.Exchange(ctx, awsTok)
 	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+awsTok)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	all, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("got HTTP %d to /sts/exchange: %s", resp.StatusCode, all)
-	}
-	var m map[string]string
-	if err := json.NewDecoder(bytes.NewReader(all)).Decode(&m); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("exchanging token: %w", err)
 	}
 	return &authn.Basic{
 		Username: "_token",
-		Password: m["token"],
+		Password: cgtok,
 	}, nil
 }
