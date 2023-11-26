@@ -88,13 +88,10 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 		log.Printf("event type is %q, skipping", levent.Headers["ce-type"])
 		return "", nil
 	}
-	data := cgevents.Occurrence{}
+	body := &registry.PushEvent{}
+	data := cgevents.Occurrence{Body: body}
 	if err := json.Unmarshal([]byte(levent.Body), &data); err != nil {
 		return "", fmt.Errorf("unable to unmarshal event: %w", err)
-	}
-	body, ok := data.Body.(registry.PushEvent)
-	if !ok {
-		return "", fmt.Errorf("event body is not a push event, skipping: %+v", body)
 	}
 	if body.Error != nil {
 		log.Printf("event body has error, skipping: %+v", body.Error)

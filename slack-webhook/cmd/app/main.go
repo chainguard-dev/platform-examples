@@ -64,12 +64,10 @@ func main() {
 
 		switch EventType := event.Type(); EventType {
 		case policy.ChangedEventType:
-			var ipr = policy.ImagePolicyRecord{}
-			occ := events.Occurrence{
-				Body: &ipr,
-			}
+			ipr := policy.ImagePolicyRecord{}
+			occ := events.Occurrence{Body: &ipr}
 			if err := event.DataAs(&occ); err != nil {
-				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
+				return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 			}
 			log.Printf("Image Policy Cluster ID: %v", ipr.ClusterID)
 
@@ -81,11 +79,9 @@ func main() {
 
 		case admission.ReviewEventType:
 			admission := admissionv1.AdmissionReview{}
-			occ := events.Occurrence{
-				Body: &admission,
-			}
+			occ := events.Occurrence{Body: &admission}
 			if err := event.DataAs(&occ); err != nil {
-				return cloudevents.NewHTTPResult(http.StatusInternalServerError, "unable to unmarshal data: %w", err)
+				return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 			}
 			log.Printf("Response Message %v", admission.Response.Result.Message)
 
