@@ -1,9 +1,23 @@
 # Enforce Events
 
-This repo holds a number of example apps demonstrating various [Chainguard Events](https://edu.chainguard.dev/chainguard/chainguard-enforce/reference/events/)
+This repo holds a number of example apps demonstrating various [Chainguard Events](https://edu.chainguard.dev/chainguard/chainguard-enforce/reference/events/) integrations.
 
-- [GitHub Issue Opener](./github-issue-opener/README.md)
-- [Slack Webhook](./slack-webhook/README.md)
-- [Jira Issuer Opener](./jira-issue-opener/)
-- [GCR Image Copier](./image-copy-gcr/)
-- [ECR Image Copier](./image-copy-ecr/)
+- [GitHub Issue Opener](./github-issue-opener/README.md) - opens an issue in GitHub when a policy is violated
+- [Slack Webhook](./slack-webhook/README.md) - sends a message to a Slack channel when a policy is violated
+- [Jira Issuer Opener](./jira-issue-opener/) - opens an issue in Jira when a policy is violated
+- [GCR Image Copier](./image-copy-gcr/) - copies images to Google Container Registry when an image is pushed to cgr.dev
+- [ECR Image Copier](./image-copy-ecr/) - copies images to Amazon Elastic Container Registry when an image is pushed to cgr.dev
+
+> [!NOTE]
+> These examples are intended to be used as a reference for building your own Chainguard platform integrations.
+> They can be used directly as-is, but are not intended to be production-ready and may experience breaking changes or be removed entirely.
+> You can reference these examples in your own Terraform configs, but we recommend that you pin a specific commit to avoid unexpected changes.
+> For example:
+
+```hcl
+module "github-issue-opener" {
+  source = "github.com/chainguard-dev/enforce-events//github-issue-opener/iac?ref=a1b2c3d4"
+
+  project_id = "..."
+  group      = "..."
+}
