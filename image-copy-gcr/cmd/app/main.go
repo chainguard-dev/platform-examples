@@ -6,11 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -18,6 +15,7 @@ import (
 	"chainguard.dev/sdk/pkg/events"
 	"chainguard.dev/sdk/pkg/events/receiver"
 	"chainguard.dev/sdk/pkg/events/registry"
+	"chainguard.dev/sdk/pkg/sts"
 	"cloud.google.com/go/compute/metadata"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
@@ -68,8 +66,8 @@ func main() {
 			return nil
 		}
 
-		body := &registry.PushEvent{}
-		data := events.Occurrence{Body: body}
+		body := registry.PushEvent{}
+		data := events.Occurrence{Body: &body}
 		if err := event.DataAs(&data); err != nil {
 			return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 		}
@@ -121,30 +119,22 @@ func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
 		return authn.Anonymous, nil
 	}
 
-	url := fmt.Sprintf("%s/sts/exchange?aud=%s&identity=%s", k.issuer, res.RegistryStr(), k.identity)
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+	ctx := context.Background()
+	exch := sts.New(k.issuer, res.RegistryStr(), sts.WithIdentity(k.identity))
+	ts, err := idtoken.NewTokenSource(ctx, k.issuer)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting token source: %w", err)
 	}
-	client, err := idtoken.NewClient(context.Background(), k.issuer)
+	tok, err := ts.Token()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting token: %w", err)
 	}
-	resp, err := client.Do(req)
+	cgtok, err := exch.Exchange(ctx, tok.AccessToken)
 	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	all, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("got HTTP %d to /sts/exchange: %s", resp.StatusCode, all)
-	}
-	var m map[string]string
-	if err := json.NewDecoder(bytes.NewReader(all)).Decode(&m); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("exchanging token: %w", err)
 	}
 	return &authn.Basic{
 		Username: "_token",
-		Password: m["token"],
+		Password: cgtok,
 	}, nil
 }
