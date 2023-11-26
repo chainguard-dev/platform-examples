@@ -74,6 +74,7 @@ func main() {
 			return cloudevents.NewHTTPResult(http.StatusBadRequest, "unable to unmarshal data: %w", err)
 		}
 		log.Printf("got event: %+v", data)
+
 		src := "cgr.dev/" + body.Repository
 		dst := env.DstRepo + "/" + filepath.Base(body.Repository)
 		log.Printf("Copying %s to %s...", src, dst)
