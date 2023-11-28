@@ -1,5 +1,5 @@
-chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad h1:wd/U2GDEIGZWNX2Zd948OdD9lLyue0DSvZiPuetHGt0=
-chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad/go.mod h1:1ezyJ9Zvbieaq9NjtZYM4JmWvDzF+h/c/V7kC1O1bsw=
+chainguard.dev/sdk v0.1.1 h1:4+cI5oo1uIX7P2SUIWgDWjpwv0/xmr6OQ85wvnFLzBs=
+chainguard.dev/sdk v0.1.1/go.mod h1:KmTz5ff+U3YbgPE5OmAFapKoh8JLg0LIF4ZINoab/JU=
 github.com/andygrunwald/go-jira v1.16.0 h1:PU7C7Fkk5L96JvPc6vDVIrd99vdPnYudHu4ju2c2ikQ=
 github.com/andygrunwald/go-jira v1.16.0/go.mod h1:UQH4IBVxIYWbgagc0LF/k9FRs9xjIiQ8hIcC6HfLwFU=
 github.com/cloudevents/sdk-go/v2 v2.14.0 h1:Nrob4FwVgi5L4tV9lhjzZcjYqFVyJzsA56CwPaPfv6s=

@@ -7,7 +7,7 @@ toolchain go1.21.0
 replace github.com/chainguard-dev/enforce-events => ../
 
 require (
-	chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad
+	chainguard.dev/sdk v0.1.1
 	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/kelseyhightower/envconfig v1.4.0

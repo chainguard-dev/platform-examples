@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	chainguard.dev/sdk v0.1.1-0.20231122170315-f184297362ad
+	chainguard.dev/sdk v0.1.1
 	github.com/aws/aws-lambda-go v1.41.0
 	github.com/aws/aws-sdk-go-v2/config v1.19.1
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.18.14
@@ -17,7 +17,7 @@ require (
 
 require (
 	chainguard.dev/go-grpc-kit v0.17.2 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.23.0 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.23.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.43 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.43 // indirect
