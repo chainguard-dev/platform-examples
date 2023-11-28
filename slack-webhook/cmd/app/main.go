@@ -13,10 +13,10 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 
-	"chainguard.dev/sdk/pkg/events"
-	"chainguard.dev/sdk/pkg/events/admission"
-	"chainguard.dev/sdk/pkg/events/policy"
-	"chainguard.dev/sdk/pkg/events/receiver"
+	"chainguard.dev/sdk/events"
+	"chainguard.dev/sdk/events/admission"
+	"chainguard.dev/sdk/events/policy"
+	"chainguard.dev/sdk/events/receiver"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/kelseyhightower/envconfig"
