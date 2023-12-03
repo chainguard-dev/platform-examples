@@ -8,7 +8,7 @@ Along with Tag History, you can use this to show the evolution of an image over 
 
 
 ```sh
-previous=sha256:10fe8e11120a983bce706e054a83f1ec96505bcb26fd904ed115767f4070f3f2
-current=sha256:ec687431d948ca883852762db506fa3daa155a82bee3c7452adb451adc05e15a
-go run ./cmd/app static $previous $current
+previous=sha256:0b7ee54f5b593bd9463cc56a37d16b447de4ea95492dba9cfa5ce2d732e6352c
+current=sha256:c894bc454800817b1747c8a1a640ae6d86004b06190f94e791098e7e78dbbc00
+go run ./cmd/app go $previous $current
 ```
