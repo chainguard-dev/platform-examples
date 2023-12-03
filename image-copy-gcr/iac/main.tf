@@ -1,9 +1,9 @@
 terraform {
   required_providers {
-    ko         = { source = "ko-build/ko" }
-    google     = { source = "hashicorp/google" }
     chainguard = { source = "chainguard-dev/chainguard" }
     cosign     = { source = "chainguard-dev/cosign" }
+    google     = { source = "hashicorp/google" }
+    ko         = { source = "ko-build/ko" }
   }
 }
 
@@ -15,14 +15,9 @@ provider "google" {
   project = var.project_id
 }
 
-provider "chainguard" {
-  login_options {
-    enabled = true
-  }
-}
-
-provider "ko" {}
+provider "chainguard" {}
 provider "cosign" {}
+provider "ko" {}
 
 resource "google_service_account" "image-copy" {
   account_id = "${var.name}-image-copy"

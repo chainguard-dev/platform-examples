@@ -54,13 +54,5 @@ echo -n YOUR GITHUB PAT | \
 The personal access token needs permission to open issues on the target
 repository.
 
-
-Once the secret has been setup, grab the `url` output and the `group` we passed
-in and run:
-
-```shell
-chainctl event subscriptions create URL --group=GROUP
-```
-
 That's it!  Now policy failures during continuous verification will open
 github issues outlining the policy violation.

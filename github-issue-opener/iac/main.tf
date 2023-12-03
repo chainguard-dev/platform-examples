@@ -1,14 +1,9 @@
 terraform {
   required_providers {
-    cosign = {
-      source = "chainguard-dev/cosign"
-    }
-    ko = {
-      source = "ko-build/ko"
-    }
-    google = {
-      source = "hashicorp/google"
-    }
+    chainguard = { source = "chainguard-dev/chainguard" }
+    cosign     = { source = "chainguard-dev/cosign" }
+    google     = { source = "hashicorp/google" }
+    ko         = { source = "ko-build/ko" }
   }
 }
 
@@ -25,7 +20,7 @@ resource "google_secret_manager_secret" "gh-pat" {
   project   = var.project_id
   secret_id = "${var.name}-github-pat"
   replication {
-    automatic = true
+    auto {}
   }
 }
 
@@ -82,7 +77,7 @@ resource "ko_build" "image" {
   importpath  = local.importpath
   working_dir = path.module
   # repo overrides KO_DOCKER_REPO environment variable
-  repo        = "gcr.io/${var.project_id}/${local.importpath}"
+  repo = "gcr.io/${var.project_id}/${local.importpath}"
 }
 
 resource "cosign_sign" "image" {
@@ -153,4 +148,10 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
   service  = google_cloud_run_service.gh-iss.name
 
   policy_data = data.google_iam_policy.noauth.policy_data
+}
+
+// Subscribe to events under the root group.
+resource "chainguard_subscription" "subscription" {
+  parent_id = var.group
+  sink      = google_cloud_run_service.gh-iss.status[0].url
 }
