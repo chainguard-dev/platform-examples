@@ -1,9 +1,9 @@
 terraform {
   required_providers {
-    ko         = { source = "ko-build/ko" }
-    google     = { source = "hashicorp/google" }
-    chainguard = { source = "chainguard/chainguard" }
+    chainguard = { source = "chainguard-dev/chainguard" }
     cosign     = { source = "chainguard-dev/cosign" }
+    google     = { source = "hashicorp/google" }
+    ko         = { source = "ko-build/ko" }
   }
 }
 
@@ -14,6 +14,10 @@ locals {
 provider "google" {
   project = var.project_id
 }
+
+provider "chainguard" {}
+provider "cosign" {}
+provider "ko" {}
 
 resource "google_service_account" "image-copy" {
   account_id = "${var.name}-image-copy"
@@ -127,7 +131,7 @@ resource "chainguard_identity" "puller-identity" {
 }
 
 # Look up the registry.pull role to grant the identity.
-data "chainguard_roles" "puller" {
+data "chainguard_role" "puller" {
   name = "registry.pull"
 }
 
@@ -135,7 +139,7 @@ data "chainguard_roles" "puller" {
 resource "chainguard_rolebinding" "puller" {
   identity = chainguard_identity.puller-identity.id
   group    = var.group
-  role     = data.chainguard_roles.puller.items[0].id
+  role     = data.chainguard_role.puller.items[0].id
 }
 
 # Create a subscription to notify the Cloud Run service on changes under the root group.

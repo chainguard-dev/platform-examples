@@ -15,13 +15,13 @@ resource "chainguard_identity" "aws" {
 }
 
 # Look up the registry.pull role to grant the identity.
-data "chainguard_roles" "puller" {
+data "chainguard_role" "puller" {
   name = "registry.pull"
 }
 
 resource "chainguard_rolebinding" "puller" {
   identity = chainguard_identity.aws.id
-  role     = data.chainguard_roles.puller.items[0].id
+  role     = data.chainguard_role.puller.items[0].id
   group    = var.group
 }
 

@@ -52,13 +52,5 @@ Create a Slack Webhook URL as detailed in the
 [Incoming webhooks for Slack](https://slack.com/help/articles/115005265063-Incoming-webhooks-for-Slack)
 help document, and run the above command!
 
-
-Once the secret has been setup, grab the `url` output and the `group` we passed
-in and run:
-
-```shell
-chainctl event subscriptions create URL --group=GROUP
-```
-
 That's it!  Now policy failures during continuous verification will
 post notifications to slack outlining the policy violation.
