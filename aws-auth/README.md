@@ -15,7 +15,6 @@ The Terraform does everything:
 
 ```sh
 aws sso login --profile my-profile
-chainctl auth login
 terraform init
 terraform apply
 ```

@@ -9,7 +9,7 @@ resource "chainguard_identity" "aws" {
     aws_account         = data.aws_caller_identity.current.account_id
     aws_user_id_pattern = "^AROA(.*):${local.lambda_name}$"
 
-    // NB: This role will be assumed so can't use the role ARN directly. We must used the ARN of the assumed role
+    // NB: This role will be assumed so can't use the role ARN directly. We must use the ARN of the assumed role
     aws_arn = "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.lambda.name}/${local.lambda_name}"
   }
 }
