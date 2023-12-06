@@ -2,15 +2,13 @@
 
 This demonstrates how to query diffs of Chainguard Images.
 
-Along with Tag History, you can use this to show the evolution of an image over time.
+Along with Tag History, you can use this to show the evolution of an image over time, or the difference between packages in a `:latest` and a `:latest-dev` image tag.
 
 ### Usage
 
-
 ```sh
-group=customer.biz # defaults to public images
-reponame=kubeflow-pipelines-frontend
-previous=sha256:00d89a080976cad0fb94e1c1629c9f3a4d8d424572ba590955147348c80a0473
-current=sha256:54382392baa1e116f3540c6b1c96c7ae441d06b38504e8be1546b85c9405e94b
-go run ./cmd/app --group=$group $reponame $previous $current
+reponame=go
+left=sha256:a62aded9da72d0f4ad2f6eb751f3ce3fff2f5d0d30d93dcd245c0cd650d5028a  # :latest
+right=sha256:9d49f4b2d67988d5345419a35533762e72eaaa8162d4b43a1e3d41869d1f845e # :latest-dev
+go run ./cmd/app $reponame $previous $current
 ```
