@@ -8,7 +8,6 @@ replace github.com/chainguard-dev/enforce-events => ../
 
 require (
 	chainguard.dev/sdk v0.1.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-containerregistry v0.16.1
 )
 
