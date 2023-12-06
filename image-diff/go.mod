@@ -1,4 +1,4 @@
-module github.com/chainguard-dev/enforce-events/image-diff
+module github.com/chainguard-dev/platform-examples/image-diff
 
 go 1.21
 

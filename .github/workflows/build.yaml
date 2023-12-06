@@ -12,12 +12,14 @@ jobs:
     strategy:
       matrix:
         image:
-          - github-issue-opener
-          - slack-webhook
-          - jira-issue-opener
-          - image-copy-gcr
-          - image-copy-ecr
           - aws-auth
+          - github-issue-opener
+          - image-copy-ecr
+          - image-copy-gcr
+          - image-diff
+          - jira-issue-opener
+          - slack-webhook
+          - tag-history
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
