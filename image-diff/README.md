@@ -10,5 +10,5 @@ Along with Tag History, you can use this to show the evolution of an image over 
 reponame=go
 left=sha256:a62aded9da72d0f4ad2f6eb751f3ce3fff2f5d0d30d93dcd245c0cd650d5028a  # :latest
 right=sha256:9d49f4b2d67988d5345419a35533762e72eaaa8162d4b43a1e3d41869d1f845e # :latest-dev
-go run ./cmd/app $reponame $left $right
+go run . $reponame $left $right
 ```

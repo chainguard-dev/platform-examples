@@ -25,7 +25,7 @@ resource "aws_ecr_repository" "app-repo" {
 
 resource "ko_build" "image" {
   repo        = aws_ecr_repository.app-repo.repository_url
-  importpath  = "github.com/chainguard-dev/enforce-events/aws-auth/cmd/app"
+  importpath  = "github.com/chainguard-dev/platform-examples/aws-auth"
   working_dir = path.module
   // Disable SBOM generation due to
   // https://github.com/ko-build/ko/issues/878

@@ -84,7 +84,7 @@ resource "aws_ecr_repository" "copier-repo" {
 
 resource "ko_build" "image" {
   repo        = aws_ecr_repository.copier-repo.repository_url
-  importpath  = "github.com/chainguard-dev/enforce-events/image-copy-ecr/cmd/app"
+  importpath  = "github.com/chainguard-dev/platform-examples/image-copy-ecr"
   working_dir = path.module
   // Disable SBOM generation due to
   // https://github.com/ko-build/ko/issues/878

@@ -13,7 +13,7 @@ it like this:
 # TODO: pre-reqs like ko/google providers.
 
 module "jira-issue-opener" {
-  source = "github.com/chainguard-dev/enforce-events/jira-issue-opener/iac"
+  source = "github.com/chainguard-dev/platform-examples/jira-issue-opener/iac"
 
   # name is used to prefix resources created by this demo application
   # where possible.

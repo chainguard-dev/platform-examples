@@ -1,4 +1,4 @@
-module github.com/chainguard-dev/enforce-events/aws-auth
+module github.com/chainguard-dev/platform-examples/aws-auth
 
 go 1.21
 

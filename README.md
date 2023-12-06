@@ -19,7 +19,7 @@ This repo holds a number of example apps demonstrating various [Chainguard Event
 
 ```hcl
 module "github-issue-opener" {
-  source = "github.com/chainguard-dev/enforce-events//github-issue-opener/iac?ref=a1b2c3d4"
+  source = "github.com/chainguard-dev/platform-examples//github-issue-opener/iac?ref=a1b2c3d4"
 
   project_id = "..."
   group      = "..."

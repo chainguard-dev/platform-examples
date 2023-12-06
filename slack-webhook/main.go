@@ -250,7 +250,7 @@ type addHeaderTransport struct {
 }
 
 func (adt *addHeaderTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("User-Agent", "Enforce-Events")
+	req.Header.Add("User-Agent", "platform-examples")
 	return adt.T.RoundTrip(req)
 }
 
