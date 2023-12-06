@@ -8,6 +8,8 @@ This repo holds a number of example apps demonstrating various [Chainguard Event
 - [GCR Image Copier](./image-copy-gcr/) - copies images to Google Container Registry when an image is pushed to cgr.dev
 - [ECR Image Copier](./image-copy-ecr/) - copies images to Amazon Elastic Container Registry when an image is pushed to cgr.dev
 - [AWS Auth Example](./aws-auth/) - demonstrates configuration of an AWS assumable Chainguard identity, as well as calling the Chainguard API from a Lambda function
+- [Tag History Example](./tag-history/) - demonstrates how to use the Chainguard API to track tag history for images in a registry
+- [Image Diff Example](./image-diff/) - demonstrates how to use the Chainguard API to compare images in a registry
 
 > [!NOTE]
 > These examples are intended to be used as a reference for building your own Chainguard platform integrations.
