@@ -10,9 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"time"
 
 	"chainguard.dev/sdk/auth/token"
@@ -44,47 +42,27 @@ func main() {
 	var tok string
 	audience := "https://console-api.enforce.dev"
 	{
+		if token.RemainingLife(audience, time.Minute) < 0 {
+			// TODO: do a browser flow here.
+			log.Fatalf("token has expired, please run `chainctl auth login`")
+		}
+		tokb, err := token.Load(audience)
+		if err != nil {
+			log.Fatalf("loading token: %v", err)
+		}
+		tok = string(tokb)
+
 		if group == "chainguard" {
 			// This group is special, since anybody can access it by assuming a
 			// broadly-assumable identity with permission to view/pull.
 
 			issuer := "https://issuer.enforce.dev"
-			resp, err := http.Get("https://justtrustme.dev/token?aud=" + issuer)
-			if err != nil {
-				log.Fatalf("getting justtrustme token: %v", err)
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				log.Fatalf("getting justtrustme token: %v", resp.Status)
-			}
-			all, err := io.ReadAll(resp.Body)
-			if err != nil {
-				log.Fatalf("reading justtrustme token: %v", err)
-			}
-			var r struct {
-				Token string `json:"token"`
-			}
-			if err := json.Unmarshal(all, &r); err != nil {
-				log.Fatalf("decoding justtrustme token: %v", err)
-			}
-			tok = r.Token
-
 			tok, err = sts.New(issuer, audience,
 				sts.WithIdentity("720909c9f5279097d847ad02a2f24ba8f59de36a/a033a6fabe0bfa0d")).
 				Exchange(ctx, tok)
 			if err != nil {
 				log.Fatalf("exchanging token: %v", err)
 			}
-		} else {
-			if token.RemainingLife(audience, time.Minute) < 0 {
-				// TODO: do a browser flow here.
-				log.Fatalf("token has expired, please run `chainctl auth login`")
-			}
-			tokb, err := token.Load(audience)
-			if err != nil {
-				log.Fatalf("loading token: %v", err)
-			}
-			tok = string(tokb)
 		}
 	}
 
