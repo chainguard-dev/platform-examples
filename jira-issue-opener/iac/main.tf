@@ -8,7 +8,7 @@ terraform {
 }
 
 locals {
-  importpath = "github.com/chainguard-dev/enforce-events/jira-issue-opener/cmd/app"
+  importpath = "github.com/chainguard-dev/platform-examples/jira-issue-opener"
 }
 
 resource "google_service_account" "jira-iss-opener" {

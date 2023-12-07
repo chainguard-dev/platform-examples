@@ -1,10 +1,10 @@
-module github.com/chainguard-dev/enforce-events/jira-issue-opener
+module github.com/chainguard-dev/platform-examples/jira-issue-opener
 
 go 1.21
 
 toolchain go1.21.0
 
-replace github.com/chainguard-dev/enforce-events => ../
+replace github.com/chainguard-dev/platform-examples => ../
 
 require (
 	chainguard.dev/sdk v0.1.1

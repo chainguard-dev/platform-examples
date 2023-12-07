@@ -12,12 +12,14 @@ jobs:
     strategy:
       matrix:
         image:
-          - github-issue-opener
-          - slack-webhook
-          - jira-issue-opener
-          - image-copy-gcr
-          - image-copy-ecr
           - aws-auth
+          - github-issue-opener
+          - image-copy-ecr
+          - image-copy-gcr
+          - image-diff
+          - jira-issue-opener
+          - slack-webhook
+          - tag-history
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -28,7 +30,7 @@ jobs:
       - uses: ko-build/setup-ko@ace48d793556083a76f1e3e6068850c1f4a369aa # v0.6
       - uses: chainguard-dev/actions/setup-registry@main
 
-      - working-directory: ${{ matrix.image }}/cmd/app
+      - working-directory: ${{ matrix.image }}
         run: |
           KO_DOCKER_REPO=localhost:1338/test ko build --image-refs=ko.images --bare .
           echo "KO build $(cat ko.images)"

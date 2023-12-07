@@ -8,7 +8,7 @@ terraform {
 }
 
 locals {
-  importpath = "github.com/chainguard-dev/enforce-events/slack-webhook/cmd/app"
+  importpath = "github.com/chainguard-dev/platform-examples/slack-webhook"
 }
 
 resource "google_service_account" "slack-notifier" {

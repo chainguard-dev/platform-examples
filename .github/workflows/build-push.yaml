@@ -19,42 +19,37 @@ jobs:
     strategy:
       matrix:
         image:
-          - github-issue-opener
-          - slack-webhook
-          - jira-issue-opener
-          - image-copy-gcr
-          - image-copy-ecr
           - aws-auth
+          - github-issue-opener
+          - image-copy-ecr
+          - image-copy-gcr
+          - image-diff
+          - jira-issue-opener
+          - slack-webhook
+          - tag-history
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
           go-version-file: ${{ matrix.image }}/go.mod
-      - run: go version
 
       - uses: sigstore/cosign-installer@ef6a6b364bbad08abd36a5f8af60b595d12702f8 # v3.0.2
       - uses: ko-build/setup-ko@ace48d793556083a76f1e3e6068850c1f4a369aa # v0.6
 
       - env:
           KO_DOCKER_REPO: ghcr.io/chainguard-dev/${{matrix.image}}
-        working-directory: ${{ matrix.image }}/cmd/app
+          COSIGN_YES: true
+        working-directory: ${{ matrix.image }}
         run: |
           ko build --image-refs=ko.images --bare .
-          echo "KO build $(cat ko.images)"
+          echo "ko build $(cat ko.images)"
+          echo "Signing $(cat ko.images)"
+          cosign sign "$(cat ko.images)"
 
-      - env:
-          COSIGN_YES: true
-        run: |
-          echo "Signing $(cat ${{matrix.image}}/cmd/app/ko.images)"
-          cosign sign "$(cat ${{matrix.image}}/cmd/app/ko.images)"
-
-      - env:
-          COSIGN_YES: true
-        run: |
-          cosign download sbom "$(cat ${{matrix.image}}/cmd/app/ko.images)"  --output-file bom.spdx.json
-          cosign attest --timeout=0 --type spdxjson --predicate bom.spdx.json "$(cat ${{matrix.image}}/cmd/app/ko.images)"
+          cosign download sbom "$(cat ko.images)"  --output-file bom.spdx.json
+          cosign attest --timeout=0 --type spdxjson --predicate bom.spdx.json "$(cat ko.images)"
           cosign verify-attestation --type spdxjson \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            --certificate-identity "https://github.com/chainguard-dev/enforce-events/.github/workflows/build-push.yaml@refs/heads/main" \
-            "$(cat ${{matrix.image}}/cmd/app/ko.images)"
+            --certificate-identity "https://github.com/chainguard-dev/platform-examples/.github/workflows/build-push.yaml@refs/heads/main" \
+            "$(cat ko.images)"

@@ -1,4 +1,4 @@
-module github.com/chainguard-dev/enforce-events/image-copy-ecr
+module github.com/chainguard-dev/platform-examples/image-copy-ecr
 
 go 1.21
 
