@@ -1,6 +1,6 @@
-# Enforce Events
+# Chainguard Platform Examples
 
-This repo holds a number of example apps demonstrating various [Chainguard Events](https://edu.chainguard.dev/chainguard/chainguard-enforce/reference/events/) integrations.
+This repo holds a number of example apps demonstrating integrations with Chainguard platform APIs, and various [Chainguard Events](https://edu.chainguard.dev/chainguard/chainguard-enforce/reference/events/).
 
 - [GitHub Issue Opener](./github-issue-opener/README.md) - opens an issue in GitHub when a policy is violated
 - [Slack Webhook](./slack-webhook/README.md) - sends a message to a Slack channel when a policy is violated
