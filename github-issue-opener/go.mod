@@ -11,7 +11,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	golang.org/x/oauth2 v0.14.0
+	golang.org/x/oauth2 v0.16.0
 )
 
 require (
