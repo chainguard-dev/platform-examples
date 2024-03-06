@@ -9,7 +9,7 @@ replace github.com/chainguard-dev/platform-examples => ../
 require (
 	chainguard.dev/sdk v0.1.1
 	cloud.google.com/go/compute/metadata v0.2.3
-	github.com/cloudevents/sdk-go/v2 v2.14.0
+	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/google/go-containerregistry v0.16.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	google.golang.org/api v0.149.0
