@@ -1,0 +1,135 @@
+[
+    {
+        "name": "actor",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+            {
+                "name": "subject",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "act",
+                "type": "RECORD",
+                "mode": "NULLABLE",
+                "fields": [
+                    {
+                        "name": "iss",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "sub",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "aud",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "aws-arn",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "aws-acct",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "aws-userid",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "email",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "job_workflow_ref",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "body",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+            {
+                "name": "repository",
+                "type": "string",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "repo_id",
+                "type": "string",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "tag",
+                "type": "string",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "digest",
+                "type": "string",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "method",
+                "type": "string",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "type",
+                "type": "string",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "when",
+                "type": "DATETIME",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "location",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "user_agent",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "error",
+                "type": "RECORD",
+                "mode": "NULLABLE",
+                "fields": [
+                    {
+                        "name": "status",
+                        "type": "INTEGER",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "code",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    },
+                    {
+                        "name": "message",
+                        "type": "STRING",
+                        "mode": "NULLABLE"
+                    }
+                ]
+            }
+        ]
+    }
+]
