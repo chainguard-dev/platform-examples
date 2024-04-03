@@ -34,6 +34,8 @@ The event recorder infrastructure leverages GCP Cloud Run, Cloud Pub/Sub and Clo
 
 This means that records may not be published immediately -- there is a delay of up to 18 minutes end-to-end -- but bursts of requests should be handled gracefully without dropping events.
 
+When the group is receiving no events, the Cloud Run services will scale to zero and incur no cost. During bursts of events, services will scale up as needed.
+
 ## Data Schema
 
 The Terraform creates a BigQuery dataset named `cloudevents_pull_event_recorder`, with a table named `dev_chainguard_registry_pull_v1`.
