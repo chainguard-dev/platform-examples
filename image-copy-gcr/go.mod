@@ -9,7 +9,7 @@ replace github.com/chainguard-dev/platform-examples => ../
 require (
 	chainguard.dev/sdk v0.1.1
 	cloud.google.com/go/compute/metadata v0.2.3
-	github.com/cloudevents/sdk-go/v2 v2.14.0
+	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/google/go-containerregistry v0.16.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	google.golang.org/api v0.149.0
@@ -25,9 +25,9 @@ require (
 	github.com/coreos/go-oidc/v3 v3.7.0 // indirect
 	github.com/docker/cli v24.0.0+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v24.0.7+incompatible // indirect
+	github.com/docker/docker v24.0.9+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -62,18 +62,18 @@ require (
 	go.opentelemetry.io/otel/trace v1.20.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/crypto v0.19.0 // indirect
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/grpc v1.59.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.28.4 // indirect
