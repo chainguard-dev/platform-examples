@@ -1,4 +1,4 @@
-module github.com/chainguard-dev/platform-examples/image-copy-gcr
+module github.com/chainguard-dev/platform-examples/image-copy-gcp
 
 go 1.21
 

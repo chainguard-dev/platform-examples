@@ -5,7 +5,7 @@ This repo holds a number of example apps demonstrating integrations with Chaingu
 - [GitHub Issue Opener](./github-issue-opener/README.md) - opens an issue in GitHub when a policy is violated
 - [Slack Webhook](./slack-webhook/README.md) - sends a message to a Slack channel when a policy is violated
 - [Jira Issuer Opener](./jira-issue-opener/) - opens an issue in Jira when a policy is violated
-- [GCR Image Copier](./image-copy-gcr/) - copies images to Google Container Registry when an image is pushed to cgr.dev
+- [GCP Image Copier](./image-copy-gcp/) - copies images to Google Artifact Registry when an image is pushed to cgr.dev
 - [ECR Image Copier](./image-copy-ecr/) - copies images to Amazon Elastic Container Registry when an image is pushed to cgr.dev
 - [AWS Auth Example](./aws-auth/) - demonstrates configuration of an AWS assumable Chainguard identity, as well as calling the Chainguard API from a Lambda function
 - [Tag History Example](./tag-history/) - demonstrates how to use the Chainguard API to track tag history for images in a registry

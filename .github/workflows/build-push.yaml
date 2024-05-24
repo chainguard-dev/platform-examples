@@ -22,7 +22,7 @@ jobs:
           - aws-auth
           - github-issue-opener
           - image-copy-ecr
-          - image-copy-gcr
+          - image-copy-gcp
           - image-diff
           - jira-issue-opener
           - slack-webhook
