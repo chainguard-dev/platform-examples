@@ -8,7 +8,7 @@ terraform {
 }
 
 locals {
-  importpath = "github.com/chainguard-dev/platform-examples/image-copy-gcr"
+  importpath = "github.com/chainguard-dev/platform-examples/image-copy-gcp"
 }
 
 provider "google" {
