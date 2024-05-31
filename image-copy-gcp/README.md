@@ -9,7 +9,7 @@ it like this:
 
 ```
 module "image-copy" {
-  source = "github.com/chainguard-dev/platform-examples//image-copy-gcp/iac"
+  source = "github.com/chainguard-dev/platform-examples/image-copy-gcp/iac"
 
   # name is used to prefix resources created by this demo application
   # where possible.
