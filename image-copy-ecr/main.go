@@ -131,8 +131,12 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	src := "cgr.dev/" + body.Repository + ":" + body.Tag
 	dst := filepath.Join(env.FullDstRepo, filepath.Base(body.Repository)) + ":" + body.Tag
 	kc := authn.NewMultiKeychain(
-		amazonKeychain,
+		// Ordering matters here, as the first keychain that can resolve the resource will be used.
+		// When pushing to CGR we want to try the Chainguard keychain first, since the ECR keychain
+		// logs a misleading error message when it's invoked for a non-ECR registry. The CGR keychain
+		// does not log such an error, so it's better to try it first.
 		cgKeychain{env.Issuer, env.Region, env.Identity},
+		amazonKeychain,
 	)
 	if env.ImmutableTags {
 		dig, err := crane.Digest(src, crane.WithAuthFromKeychain(kc))
