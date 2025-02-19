@@ -76,6 +76,7 @@ resource "aws_ecr_repository" "repo" {
 resource "aws_ecr_repository" "copier-repo" {
   name                 = "${var.dst_repo}/image-copy"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = false
