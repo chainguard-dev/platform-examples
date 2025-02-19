@@ -1,7 +1,11 @@
 data "aws_caller_identity" "current" {}
 
+data "chainguard_group" "group" {
+  name = var.group_name
+}
+
 resource "chainguard_identity" "aws" {
-  parent_id   = var.group
+  parent_id   = data.chainguard_group.group.id
   name        = "aws-lambda-identity"
   description = "Identity for AWS Lambda"
 
@@ -22,11 +26,11 @@ data "chainguard_role" "puller" {
 resource "chainguard_rolebinding" "puller" {
   identity = chainguard_identity.aws.id
   role     = data.chainguard_role.puller.items[0].id
-  group    = var.group
+  group    = data.chainguard_group.group.id
 }
 
 # Create a subscription to notify the Lambda function on changes under the root group.
 resource "chainguard_subscription" "subscription" {
-  parent_id = var.group
+  parent_id = data.chainguard_group.group.id
   sink      = aws_lambda_function_url.lambda.function_url
 }

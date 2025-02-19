@@ -17,6 +17,7 @@ import (
 	"chainguard.dev/sdk/auth/aws"
 	cgevents "chainguard.dev/sdk/events"
 	"chainguard.dev/sdk/events/registry"
+	v1 "chainguard.dev/sdk/proto/platform/registry/v1"
 	"chainguard.dev/sdk/sts"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -33,7 +34,9 @@ import (
 var amazonKeychain authn.Keychain = authn.NewKeychainFromHelper(ecrcreds.NewECRHelper(ecrcreds.WithLogger(log.Writer())))
 
 var env = struct {
+	APIEndpoint   string `envconfig:"API_ENDPOINT" required:"true"`
 	Issuer        string `envconfig:"ISSUER_URL" required:"true"`
+	GroupName     string `envconfig:"GROUP_NAME" required:"true"`
 	Group         string `envconfig:"GROUP" required:"true"`
 	Identity      string `envconfig:"IDENTITY" required:"true"`
 	Region        string `envconfig:"REGION" required:"true"`
@@ -47,6 +50,7 @@ func init() {
 		log.Fatalf("failed to process env var: %s", err)
 	}
 }
+
 func main() { lambda.Start(handler) }
 
 func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp string, err error) {
@@ -99,13 +103,19 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 		return "", nil
 	}
 
+	// Resolve the repository ID to the name
+	repoName, err := resolveRepositoryName(ctx, body.RepoID)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve repository name from id in the event: %w", err)
+	}
+
 	// Attempt to create the repo; if it exists, ignore it.
 	// ECR requires you to pre-create repos before pushing to them.
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to load configuration, %w", err)
 	}
-	repo := filepath.Join(env.DstRepo, filepath.Base(body.Repository))
+	repo := filepath.Join(env.DstRepo, repoName)
 	tagMutability := types.ImageTagMutabilityMutable
 	if env.ImmutableTags {
 		tagMutability = types.ImageTagMutabilityImmutable
@@ -128,14 +138,14 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	}
 
 	// Sync src:tag to dst:tag.
-	src := "cgr.dev/" + body.Repository + ":" + body.Tag
-	dst := filepath.Join(env.FullDstRepo, filepath.Base(body.Repository)) + ":" + body.Tag
+	src := "cgr.dev/" + env.GroupName + "/" + repoName + ":" + body.Tag
+	dst := filepath.Join(env.FullDstRepo, repoName) + ":" + body.Tag
 	kc := authn.NewMultiKeychain(
 		// Ordering matters here, as the first keychain that can resolve the resource will be used.
 		// When pushing to CGR we want to try the Chainguard keychain first, since the ECR keychain
 		// logs a misleading error message when it's invoked for a non-ECR registry. The CGR keychain
 		// does not log such an error, so it's better to try it first.
-		cgKeychain{env.Issuer, env.Region, env.Identity},
+		cgKeychain{},
 		amazonKeychain,
 	)
 	if env.ImmutableTags {
@@ -153,41 +163,77 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	return "", nil
 }
 
-// cgKeychain is an authn.Keychain that provides a Chainguard token capable of pulling from cgr.dev.
+func resolveRepositoryName(ctx context.Context, repoID string) (string, error) {
+	// Generate a token for the Chainguard API
+	tok, err := newToken(ctx, env.APIEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("getting token: %w", err)
+	}
+
+	// Create client that uses the token
+	client, err := v1.NewClients(ctx, env.APIEndpoint, tok.AccessToken)
+	if err != nil {
+		return "", fmt.Errorf("creating clients: %w", err)
+	}
+
+	// Lookup the repository name from the ID
+	repoList, err := client.Registry().ListRepos(ctx, &v1.RepoFilter{
+		Id: repoID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("listing repositories: %w", err)
+	}
+	for _, repo := range repoList.Items {
+		return repo.Name, nil
+	}
+
+	return "", fmt.Errorf("couldn't find repository name for id: %s", repoID)
+}
+
+// newToken generates a token using the AWS identity of the Lambda function.
 //
 // It does this by first generating an AWS token, then exchanging it for a Chainguard token for the
 // specified Chainguard identity, which has been set up to be assumed by the AWS identity.
-type cgKeychain struct {
-	issuer, region, identity string
+func newToken(ctx context.Context, audience string) (*sts.TokenPair, error) {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration, %w", err)
+	}
+
+	creds, err := cfg.Credentials.Retrieve(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve credentials, %w", err)
+	}
+
+	awsTok, err := aws.GenerateToken(ctx, creds, env.Issuer, env.Identity)
+	if err != nil {
+		return nil, fmt.Errorf("generating AWS token: %w", err)
+	}
+
+	exch := sts.New(env.Issuer, audience, sts.WithIdentity(env.Identity))
+	cgTok, err := exch.Exchange(ctx, awsTok)
+	if err != nil {
+		return nil, fmt.Errorf("exchanging token: %w", err)
+	}
+
+	return &cgTok, nil
 }
+
+// cgKeychain is an authn.Keychain that provides a Chainguard token capable of pulling from cgr.dev.
+type cgKeychain struct{}
 
 func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
 	if res.RegistryStr() != "cgr.dev" {
 		return authn.Anonymous, nil
 	}
 
-	ctx := context.Background()
-	cfg, err := config.LoadDefaultConfig(ctx)
+	tok, err := newToken(context.Background(), res.RegistryStr())
 	if err != nil {
-		return nil, fmt.Errorf("failed to load configuration, %w", err)
-	}
-	creds, err := cfg.Credentials.Retrieve(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve credentials, %w", err)
+		return nil, fmt.Errorf("getting token: %w", err)
 	}
 
-	awsTok, err := aws.GenerateToken(ctx, creds, k.issuer, k.identity)
-	if err != nil {
-		return nil, fmt.Errorf("generating AWS token: %w", err)
-	}
-
-	exch := sts.New(k.issuer, res.RegistryStr(), sts.WithIdentity(k.identity))
-	cgtok, err := exch.Exchange(ctx, awsTok)
-	if err != nil {
-		return nil, fmt.Errorf("exchanging token: %w", err)
-	}
 	return &authn.Basic{
 		Username: "_token",
-		Password: cgtok,
+		Password: tok.AccessToken,
 	}, nil
 }

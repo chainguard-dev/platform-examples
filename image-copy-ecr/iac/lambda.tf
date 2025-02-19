@@ -108,9 +108,11 @@ resource "aws_lambda_function" "lambda" {
 
   environment {
     variables = {
-      GROUP          = var.group
+      GROUP_NAME     = var.group_name
+      GROUP          = data.chainguard_group.group.id
       IDENTITY       = chainguard_identity.aws.id
       ISSUER_URL     = "https://issuer.enforce.dev"
+      API_ENDPOINT   = "https://console-api.enforce.dev"
       DST_REPO       = var.dst_repo
       FULL_DST_REPO  = aws_ecr_repository.repo.repository_url
       REGION         = data.aws_region.current.name
