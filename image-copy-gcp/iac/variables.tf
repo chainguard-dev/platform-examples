@@ -19,9 +19,9 @@ variable "env" {
   description = "The Chainguard environment against which this solution is configured."
 }
 
-variable "group" {
+variable "group_name" {
   type        = string
-  description = "The Chainguard group that we are subscribing to policy violations under."
+  description = "The name of the Chainguard group that we are subscribing to events under."
 }
 
 variable "dst_repo" {

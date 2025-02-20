@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"chainguard.dev/sdk/events"
 	"chainguard.dev/sdk/events/receiver"
 	"chainguard.dev/sdk/events/registry"
+	v1 "chainguard.dev/sdk/proto/platform/registry/v1"
 	"chainguard.dev/sdk/sts"
 	"cloud.google.com/go/compute/metadata"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -28,15 +28,18 @@ import (
 )
 
 type envConfig struct {
-	Issuer   string `envconfig:"ISSUER_URL" required:"true"`
-	Group    string `envconfig:"GROUP" required:"true"`
-	Identity string `envconfig:"IDENTITY" required:"true"`
-	Port     int    `envconfig:"PORT" default:"8080" required:"true"`
-	DstRepo  string `envconfig:"DST_REPO" required:"true"` // Almost fully qualified at this point, just needs the final component.
+	APIEndpoint string `envconfig:"API_ENDPOINT" required:"true"`
+	Issuer      string `envconfig:"ISSUER_URL" required:"true"`
+	GroupName   string `envconfig:"GROUP_NAME" required:"true"`
+	Group       string `envconfig:"GROUP" required:"true"`
+	Identity    string `envconfig:"IDENTITY" required:"true"`
+	Port        int    `envconfig:"PORT" default:"8080" required:"true"`
+	DstRepo     string `envconfig:"DST_REPO" required:"true"` // Almost fully qualified at this point, just needs the final component.
 }
 
 var location, sa string
 var srcRepo name.Repository
+var env envConfig
 
 func init() {
 	var err error
@@ -48,13 +51,12 @@ func init() {
 	if err != nil {
 		log.Panicf("getting SA: %v", err)
 	}
+	if err := envconfig.Process("", &env); err != nil {
+		log.Panicf("failed to process env var: %s", err)
+	}
 }
 
 func main() {
-	var env envConfig
-	if err := envconfig.Process("", &env); err != nil {
-		log.Fatalf("failed to process env var: %s", err)
-	}
 	log.Printf("env: %+v", env)
 	log.Printf("location: %s", location)
 	log.Printf("sa: %s", sa)
@@ -73,13 +75,31 @@ func main() {
 		}
 		log.Printf("got event: %+v", data)
 
-		src := "cgr.dev/" + body.Repository
-		dst := env.DstRepo + "/" + filepath.Base(body.Repository)
+		// Check that the event is one we care about:
+		// - It's not a push error.
+		// - It's a tag push.
+		if body.Error != nil {
+			log.Printf("event body has error, skipping: %+v", body.Error)
+			return nil
+		}
+		if body.Tag == "" || body.Type != "manifest" {
+			log.Printf("event body is not a tag push, skipping: %q %q", body.Tag, body.Type)
+			return nil
+		}
+
+		// Resolve the repository ID to the name
+		repoName, err := resolveRepositoryName(ctx, body.RepoID)
+		if err != nil {
+			return fmt.Errorf("failed to resolve repository name from id in the event: %w", err)
+		}
+
+		src := "cgr.dev/" + env.GroupName + "/" + repoName + ":" + body.Tag
+		dst := env.DstRepo + "/" + repoName + ":" + body.Tag
 		log.Printf("Copying %s to %s...", src, dst)
 		if err := crane.Copy(src, dst,
 			crane.WithAuthFromKeychain(authn.NewMultiKeychain(
 				google.Keychain,
-				cgKeychain{env.Issuer, env.Identity},
+				cgKeychain{},
 			))); err != nil {
 			return fmt.Errorf("copying image: %w", err)
 		}
@@ -110,18 +130,36 @@ func main() {
 	}
 }
 
-type cgKeychain struct {
-	issuer, identity string
-}
-
-func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
-	if res.RegistryStr() != "cgr.dev" {
-		return authn.Anonymous, nil
+func resolveRepositoryName(ctx context.Context, repoID string) (string, error) {
+	// Generate a token for the Chainguard API
+	tok, err := newToken(ctx, env.APIEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("getting token: %w", err)
 	}
 
-	ctx := context.Background()
-	exch := sts.New(k.issuer, res.RegistryStr(), sts.WithIdentity(k.identity))
-	ts, err := idtoken.NewTokenSource(ctx, k.issuer)
+	// Create client that uses the token
+	client, err := v1.NewClients(ctx, env.APIEndpoint, tok.AccessToken)
+	if err != nil {
+		return "", fmt.Errorf("creating clients: %w", err)
+	}
+
+	// Lookup the repository name from the ID
+	repoList, err := client.Registry().ListRepos(ctx, &v1.RepoFilter{
+		Id: repoID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("listing repositories: %w", err)
+	}
+	for _, repo := range repoList.Items {
+		return repo.Name, nil
+	}
+
+	return "", fmt.Errorf("couldn't find repository name for id: %s", repoID)
+}
+
+func newToken(ctx context.Context, audience string) (*sts.TokenPair, error) {
+	exch := sts.New(env.Issuer, audience, sts.WithIdentity(env.Identity))
+	ts, err := idtoken.NewTokenSource(ctx, env.Issuer)
 	if err != nil {
 		return nil, fmt.Errorf("getting token source: %w", err)
 	}
@@ -129,12 +167,28 @@ func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("getting token: %w", err)
 	}
-	cgtok, err := exch.Exchange(ctx, tok.AccessToken)
+	cgTok, err := exch.Exchange(ctx, tok.AccessToken)
 	if err != nil {
 		return nil, fmt.Errorf("exchanging token: %w", err)
 	}
+
+	return &cgTok, nil
+}
+
+type cgKeychain struct{}
+
+func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
+	if res.RegistryStr() != "cgr.dev" {
+		return authn.Anonymous, nil
+	}
+
+	tok, err := newToken(context.Background(), res.RegistryStr())
+	if err != nil {
+		return nil, fmt.Errorf("getting token: %w", err)
+	}
+
 	return &authn.Basic{
 		Username: "_token",
-		Password: cgtok,
+		Password: tok.AccessToken,
 	}, nil
 }
