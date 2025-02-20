@@ -19,7 +19,7 @@ terraform init
 terraform apply
 ```
 
-This will prompt for a group ID and destination repo, and show you the resources it will create.
+This will prompt for your group name and destination repo, and show you the resources it will create.
 
 When the resources are created, any images that are pushed to your group will be mirrored to the ECR repository.
 
@@ -28,22 +28,3 @@ The Lambda function has minimal permissions: it's only allowed to push images to
 The Chainguard identity also has minimal permissions: it only has permission to pull from the source repo.
 
 To tear down resources, run `terraform destroy`.
-
-## Demo
-
-After setting up the infrastructure as described above:
-
-```sh
-crane cp random.kontain.me/random cgr.dev/<org>/random:hello-demo
-```
-
-This pulls a randomly generated image from `kontain.me` and pushes it to your private registry.
-
-The Lambda function you set up will fire and copy the image to ECR. A few seconds later:
-
-```sh
-crane ls <account-id>.dkr.ecr.<region>.amazonaws.com/<dst-repo>/random
-hello-demo
-```
-
-It worked! 🎉
