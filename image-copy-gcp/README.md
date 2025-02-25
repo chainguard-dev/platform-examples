@@ -21,11 +21,11 @@ module "image-copy" {
   #  - The Service Account that authorizes pushes to Google Artifact Registry.
   project_id = "<project-id>"
 
-  # The Chainguard IAM group from which we expect to receive events.
+  # The name of the Chainguard IAM group from which we expect to receive events.
   # This is used to authenticate that the Chainguard events are intended
   # for you, and not another user.
   # Images pushed to repos under this group will be mirrored to Artifact Registry.
-  group = "<group-id>"
+  group_name = "<group-name>"
 
   # This is the location in Artifact Registry where images will be mirrored.
   # For example: pushes to cgr.dev/<group>/foo will be mirrored to

@@ -26,7 +26,7 @@ resource "ko_build" "image" {
   base_image  = data.cosign_verify.base-image.verified_ref
   importpath  = local.importpath
   working_dir = path.module
-  repo        = "gcr.io/${var.project_id}/${local.importpath}"
+  repo        = "${google_artifact_registry_repository.dst-repo.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.dst-repo.repository_id}/image-copy"
 }
 
 data "cosign_verify" "base-image" {
@@ -72,8 +72,16 @@ resource "google_cloud_run_service" "image-copy" {
           value = "https://issuer.${var.env}"
         }
         env {
+          name  = "API_ENDPOINT"
+          value = "https://console-api.${var.env}"
+        }
+        env {
+          name  = "GROUP_NAME"
+          value = var.group_name
+        }
+        env {
           name  = "GROUP"
-          value = var.group
+          value = data.chainguard_group.group.id
         }
         env {
           name  = "IDENTITY"
@@ -118,9 +126,13 @@ resource "google_artifact_registry_repository_iam_member" "pusher" {
   member     = "serviceAccount:${google_service_account.image-copy.email}"
 }
 
+data "chainguard_group" "group" {
+  name = var.group_name
+}
+
 # Create the identity for our Cloud Run service to assume.
 resource "chainguard_identity" "puller-identity" {
-  parent_id = var.group
+  parent_id = data.chainguard_group.group.id
   name      = "image-copy cgr puller"
 
   claim_match {
@@ -137,12 +149,12 @@ data "chainguard_role" "puller" {
 # Grant the identity the "registry.pull" role on the root group.
 resource "chainguard_rolebinding" "puller" {
   identity = chainguard_identity.puller-identity.id
-  group    = var.group
+  group    = data.chainguard_group.group.id
   role     = data.chainguard_role.puller.items[0].id
 }
 
 # Create a subscription to notify the Cloud Run service on changes under the root group.
 resource "chainguard_subscription" "subscription" {
-  parent_id = var.group
+  parent_id = data.chainguard_group.group.id
   sink      = google_cloud_run_service.image-copy.status[0].url
 }
