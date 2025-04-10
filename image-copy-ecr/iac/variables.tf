@@ -13,3 +13,9 @@ variable "immutable_tags" {
   description = "Whether to enable immutable tags."
   default     = false
 }
+
+variable "ignore_referrers" {
+  type        = bool
+  description = "Whether to ignore events for signatures and attestations."
+  default     = false
+}

@@ -28,3 +28,9 @@ variable "dst_repo" {
   type        = string
   description = "The destination repo where images should be copied to."
 }
+
+variable "ignore_referrers" {
+  type        = bool
+  description = "Whether to ignore events for signatures and attestations."
+  default     = false
+}
