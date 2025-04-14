@@ -107,17 +107,20 @@ resource "aws_lambda_function" "lambda" {
   package_type = "Image"
   image_uri    = ko_build.image.image_ref
 
+  timeout = 300
+
   environment {
     variables = {
-      GROUP_NAME     = var.group_name
-      GROUP          = data.chainguard_group.group.id
-      IDENTITY       = chainguard_identity.aws.id
-      ISSUER_URL     = "https://issuer.enforce.dev"
-      API_ENDPOINT   = "https://console-api.enforce.dev"
-      DST_REPO       = var.dst_repo
-      FULL_DST_REPO  = aws_ecr_repository.repo.repository_url
-      REGION         = data.aws_region.current.name
-      IMMUTABLE_TAGS = var.immutable_tags
+      GROUP_NAME       = var.group_name
+      GROUP            = data.chainguard_group.group.id
+      IDENTITY         = chainguard_identity.aws.id
+      ISSUER_URL       = "https://issuer.enforce.dev"
+      API_ENDPOINT     = "https://console-api.enforce.dev"
+      DST_REPO         = var.dst_repo
+      FULL_DST_REPO    = aws_ecr_repository.repo.repository_url
+      REGION           = data.aws_region.current.name
+      IMMUTABLE_TAGS   = var.immutable_tags
+      IGNORE_REFERRERS = var.ignore_referrers
     }
   }
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"chainguard.dev/sdk/events"
 	"chainguard.dev/sdk/events/receiver"
@@ -28,13 +29,14 @@ import (
 )
 
 type envConfig struct {
-	APIEndpoint string `envconfig:"API_ENDPOINT" required:"true"`
-	Issuer      string `envconfig:"ISSUER_URL" required:"true"`
-	GroupName   string `envconfig:"GROUP_NAME" required:"true"`
-	Group       string `envconfig:"GROUP" required:"true"`
-	Identity    string `envconfig:"IDENTITY" required:"true"`
-	Port        int    `envconfig:"PORT" default:"8080" required:"true"`
-	DstRepo     string `envconfig:"DST_REPO" required:"true"` // Almost fully qualified at this point, just needs the final component.
+	APIEndpoint     string `envconfig:"API_ENDPOINT" required:"true"`
+	Issuer          string `envconfig:"ISSUER_URL" required:"true"`
+	GroupName       string `envconfig:"GROUP_NAME" required:"true"`
+	Group           string `envconfig:"GROUP" required:"true"`
+	Identity        string `envconfig:"IDENTITY" required:"true"`
+	Port            int    `envconfig:"PORT" default:"8080" required:"true"`
+	DstRepo         string `envconfig:"DST_REPO" required:"true"` // Almost fully qualified at this point, just needs the final component.
+	IgnoreReferrers bool   `envconfig:"IGNORE_REFERRERS" required:"true"`
 }
 
 var location, sa string
@@ -78,12 +80,17 @@ func main() {
 		// Check that the event is one we care about:
 		// - It's not a push error.
 		// - It's a tag push.
+		// - Optionally, it's not a signature or attestation.
 		if body.Error != nil {
 			log.Printf("event body has error, skipping: %+v", body.Error)
 			return nil
 		}
 		if body.Tag == "" || body.Type != "manifest" {
 			log.Printf("event body is not a tag push, skipping: %q %q", body.Tag, body.Type)
+			return nil
+		}
+		if env.IgnoreReferrers && strings.HasPrefix(body.Tag, "sha256-") {
+			log.Printf("tag is a referrer; skipping: %q", body.Tag)
 			return nil
 		}
 

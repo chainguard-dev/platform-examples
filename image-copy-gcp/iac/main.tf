@@ -91,6 +91,10 @@ resource "google_cloud_run_service" "image-copy" {
           name  = "DST_REPO"
           value = "${var.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.dst-repo.name}"
         }
+        env {
+          name  = "IGNORE_REFERRERS"
+          value = var.ignore_referrers
+        }
       }
     }
   }

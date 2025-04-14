@@ -34,15 +34,16 @@ import (
 var amazonKeychain authn.Keychain = authn.NewKeychainFromHelper(ecrcreds.NewECRHelper(ecrcreds.WithLogger(log.Writer())))
 
 var env = struct {
-	APIEndpoint   string `envconfig:"API_ENDPOINT" required:"true"`
-	Issuer        string `envconfig:"ISSUER_URL" required:"true"`
-	GroupName     string `envconfig:"GROUP_NAME" required:"true"`
-	Group         string `envconfig:"GROUP" required:"true"`
-	Identity      string `envconfig:"IDENTITY" required:"true"`
-	Region        string `envconfig:"REGION" required:"true"`
-	DstRepo       string `envconfig:"DST_REPO" required:"true"`
-	FullDstRepo   string `envconfig:"FULL_DST_REPO" required:"true"`
-	ImmutableTags bool   `envconfig:"IMMUTABLE_TAGS" required:"true"`
+	APIEndpoint     string `envconfig:"API_ENDPOINT" required:"true"`
+	Issuer          string `envconfig:"ISSUER_URL" required:"true"`
+	GroupName       string `envconfig:"GROUP_NAME" required:"true"`
+	Group           string `envconfig:"GROUP" required:"true"`
+	Identity        string `envconfig:"IDENTITY" required:"true"`
+	Region          string `envconfig:"REGION" required:"true"`
+	DstRepo         string `envconfig:"DST_REPO" required:"true"`
+	FullDstRepo     string `envconfig:"FULL_DST_REPO" required:"true"`
+	ImmutableTags   bool   `envconfig:"IMMUTABLE_TAGS" required:"true"`
+	IgnoreReferrers bool   `envconfig:"IGNORE_REFERRERS" required:"true"`
 }{}
 
 func init() {
@@ -85,6 +86,7 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	// - It's a registry push event.
 	// - It's not a push error.
 	// - It's a tag push.
+	// - Optionally, it's not a signature or attestation.
 	if levent.Headers["ce-type"] != registry.PushedEventType {
 		log.Printf("event type is %q, skipping", levent.Headers["ce-type"])
 		return "", nil
@@ -100,6 +102,10 @@ func handler(ctx context.Context, levent events.LambdaFunctionURLRequest) (resp 
 	}
 	if body.Tag == "" || body.Type != "manifest" {
 		log.Printf("event body is not a tag push, skipping: %q %q", body.Tag, body.Type)
+		return "", nil
+	}
+	if env.IgnoreReferrers && strings.HasPrefix(body.Tag, "sha256-") {
+		log.Printf("tag is a referrer; skipping: %q", body.Tag)
 		return "", nil
 	}
 

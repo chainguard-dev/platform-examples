@@ -34,6 +34,9 @@ module "image-copy" {
 
   # Location of the Artifact Registry repository, and the Cloud Run subscriber.
   # location = "us-central1" (default)
+
+  # Don't copy referrers like signatures and attestations
+  # ignore_referrers = true
 }
 ```
 
