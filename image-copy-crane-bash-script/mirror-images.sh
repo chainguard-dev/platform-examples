@@ -11,10 +11,10 @@ CG_ORG="andrewd.dev"
 chainctl images repos list --parent="$CG_ORG" -o json \
   | jq -r '.items[].name' \
   | while read -r image; do
-    echo "Creating ECR repo: $TARGET_ECR_REPO_PREFIX$image"
+    echo "Creating ECR repo: $TARGET_ECR_REPO_PREFIX/$image"
     aws ecr create-repository \
       --region $AWS_REGION \
-      --repository-name "$TARGET_ECR_REPO_PREFIX$image" \
+      --repository-name "$TARGET_ECR_REPO_PREFIX/$image" \
       --output text \
       --query 'repository.repositoryUri' \
       2>/dev/null || echo "ECR repo $image may already exist"
