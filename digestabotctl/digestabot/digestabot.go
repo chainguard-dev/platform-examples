@@ -100,13 +100,16 @@ func UpdateFiles(files []string, logger *slog.Logger) error {
 			Digester: Crane{},
 			InFile:   f,
 			OutFile:  writer,
+			Logger:   logger,
 		}
 
 		logger.Info("processing", "file", opts.Name)
 		if err := UpdateHashes(opts); err != nil {
 			return err
 		}
-		os.Rename(outFile, file)
+		if err := os.Rename(outFile, file); err != nil {
+			return err
+		}
 
 	}
 

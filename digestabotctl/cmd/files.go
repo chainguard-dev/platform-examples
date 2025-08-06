@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/chainguard-dev/platform-examples/digestabotctl/digestabot"
+	"github.com/chainguard-dev/platform-examples/digestabotctl/platforms"
+	"github.com/chainguard-dev/platform-examples/digestabotctl/versioncontrol"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,6 +23,7 @@ func init() {
 }
 
 func files(cmd *cobra.Command, args []string) error {
+
 	fileTypes := viper.GetStringSlice("file_types")
 	dir := viper.GetString("directory")
 
@@ -33,7 +37,31 @@ func files(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		digestabot.UpdateFiles(matches, cfg.Logger)
+		if err := digestabot.UpdateFiles(matches, cfg.Logger); err != nil {
+			return err
+		}
+	}
+
+	if viper.GetBool("create_pr") {
+		opts := versioncontrol.CommitOptions{
+			Directory: ".",
+			Message:   "update digest hashes",
+			Name:      "Test",
+			Email:     "test@test.com",
+			When:      time.Now(),
+		}
+
+		commit, err := versioncontrol.Commit(opts)
+		if err != nil {
+			return err
+		}
+		pr := platforms.PullRequest{
+			Description: "this is a test",
+			Diff:        commit,
+		}
+
+		platforms.NewGithubPR(pr)
+
 	}
 
 	return nil
