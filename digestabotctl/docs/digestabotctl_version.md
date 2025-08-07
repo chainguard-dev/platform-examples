@@ -1,15 +1,15 @@
-## digestabotctl docs
+## digestabotctl version
 
-Generate cli documentation
+Prints the version
 
 ```
-digestabotctl docs [flags]
+digestabotctl version [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for docs
+  -h, --help   help for version
 ```
 
 ### Options inherited from parent commands
