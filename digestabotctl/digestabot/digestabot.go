@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -114,4 +116,34 @@ func UpdateFiles(files []string, logger *slog.Logger) error {
 	}
 
 	return nil
+}
+
+func FindFiles(fileTypes []string, directory string) ([]string, error) {
+	files := []string{}
+
+	if err := filepath.WalkDir(directory, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		base := filepath.Base(path)
+		for _, pattern := range fileTypes {
+			matched, err := filepath.Match(pattern, base)
+			if err != nil {
+				return err
+			}
+			if matched {
+				files = append(files, path)
+				break
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+
 }

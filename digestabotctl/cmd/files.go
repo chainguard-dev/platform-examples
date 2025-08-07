@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"io/fs"
-	"path/filepath"
 	"time"
 
 	"github.com/chainguard-dev/platform-examples/digestabotctl/digestabot"
@@ -45,28 +43,9 @@ func files(cmd *cobra.Command, args []string) error {
 
 	fileTypes := viper.GetStringSlice("file_types")
 	dir := viper.GetString("directory")
-	files := []string{}
 
-	if err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		base := filepath.Base(path)
-		for _, pattern := range fileTypes {
-			matched, err := filepath.Match(pattern, base)
-			if err != nil {
-				return err
-			}
-			if matched {
-				files = append(files, path)
-				break
-			}
-		}
-		return nil
-	}); err != nil {
+	files, err := digestabot.FindFiles(fileTypes, dir)
+	if err != nil {
 		return err
 	}
 
