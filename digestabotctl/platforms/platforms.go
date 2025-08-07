@@ -19,19 +19,25 @@ type PRCreator interface {
 }
 
 type PullRequest struct {
+	Title       string
 	Description string
 	Diff        string
+	Base        string
+	Head        string
 }
 
 var prTemplate = `{{ $tick := "` + "```" + `" -}}
 {{.Description}}
 
 ## Changes
+
 <details>
+
 {{ $tick }}diff 
 
 {{ .Diff }}
 {{ $tick }}
+
 </details>
 `
 
