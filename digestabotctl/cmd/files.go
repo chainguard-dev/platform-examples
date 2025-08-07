@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"io/fs"
 	"path/filepath"
 	"time"
 
@@ -26,20 +26,33 @@ func files(cmd *cobra.Command, args []string) error {
 
 	fileTypes := viper.GetStringSlice("file_types")
 	dir := viper.GetString("directory")
+	files := []string{}
 
-	for _, fileType := range fileTypes {
-		matches, err := filepath.Glob(fmt.Sprintf("%s/%s", dir, fileType))
+	if err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-
-		if len(matches) == 0 {
-			continue
+		if d.IsDir() {
+			return nil
 		}
-
-		if err := digestabot.UpdateFiles(matches, cfg.Logger); err != nil {
-			return err
+		base := filepath.Base(path)
+		for _, pattern := range fileTypes {
+			matched, err := filepath.Match(pattern, base)
+			if err != nil {
+				return err
+			}
+			if matched {
+				files = append(files, path)
+				break
+			}
 		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if err := digestabot.UpdateFiles(files, cfg.Logger); err != nil {
+		return err
 	}
 
 	if viper.GetBool("create_pr") {
