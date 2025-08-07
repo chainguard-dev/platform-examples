@@ -15,18 +15,6 @@ var (
 	ErrBadResponse = fmt.Errorf("request was unsuccessful")
 )
 
-type PRCreator interface {
-	CreatePR()
-}
-
-type PullRequest struct {
-	Title       string
-	Description string
-	Diff        string
-	Base        string
-	Head        string
-}
-
 var prTemplate = `{{ $tick := "` + "```" + `" -}}
 {{.Description}}
 
@@ -41,6 +29,29 @@ var prTemplate = `{{ $tick := "` + "```" + `" -}}
 
 </details>
 `
+
+type PRCreator interface {
+	CreatePR() error
+}
+
+type PullRequest struct {
+	Title       string
+	Description string
+	Diff        string
+	Base        string
+	Head        string
+	RepoData
+}
+
+type RepoData struct {
+	Repo  string
+	Owner string
+	Token string
+}
+
+func CreatePR(p PRCreator) error {
+	return p.CreatePR()
+}
 
 func sendRequest(req *http.Request) ([]byte, error) {
 	client := http.Client{

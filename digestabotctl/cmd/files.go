@@ -88,28 +88,28 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 		return err
 	}
 
+	pr := platforms.PullRequest{
+		Description: viper.GetString("description"),
+		Title:       viper.GetString("title"),
+		Diff:        commit,
+		Base:        viper.GetString("base"),
+		Head:        viper.GetString("branch"),
+		RepoData: platforms.RepoData{
+			Repo:  viper.GetString("repo"),
+			Owner: viper.GetString("owner"),
+			Token: viper.GetString("token"),
+		},
+	}
+
 	switch platform {
 	case "github":
 		{
-			gh := platforms.GitHub{
-				Repo:  viper.GetString("repo"),
-				Owner: viper.GetString("owner"),
-				Token: viper.GetString("token"),
-			}
-			pr := platforms.PullRequest{
-				Description: viper.GetString("description"),
-				Title:       viper.GetString("title"),
-				Diff:        commit,
-				Base:        viper.GetString("base"),
-				Head:        viper.GetString("branch"),
-			}
-
-			ghPR, err := platforms.NewGithubPR(gh, pr)
+			gh, err := platforms.NewGitHub(pr)
 			if err != nil {
 				return err
 			}
 
-			if err := gh.CreatePR(ghPR); err != nil {
+			if err := platforms.CreatePR(gh); err != nil {
 				return err
 			}
 

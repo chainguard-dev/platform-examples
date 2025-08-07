@@ -12,6 +12,7 @@ type GitHub struct {
 	Owner string
 	Repo  string
 	Token string
+	GitHubPR
 }
 
 type GitHubPR struct {
@@ -21,9 +22,9 @@ type GitHubPR struct {
 	Base  string `json:"base"`
 }
 
-func (g GitHub) CreatePR(pr GitHubPR) error {
+func (g GitHub) CreatePR() error {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls", g.Owner, g.Repo)
-	body, err := json.Marshal(pr)
+	body, err := json.Marshal(g.GitHubPR)
 	if err != nil {
 		return err
 	}
@@ -44,17 +45,22 @@ func (g GitHub) CreatePR(pr GitHubPR) error {
 	return nil
 }
 
-func NewGithubPR(g GitHub, p PullRequest) (GitHubPR, error) {
+func NewGitHub(pr PullRequest) (GitHub, error) {
 	temp := template.Must(template.New("file").Parse(prTemplate))
 	var buf = bytes.Buffer{}
-	if err := temp.Execute(&buf, p); err != nil {
-		return GitHubPR{}, err
+	if err := temp.Execute(&buf, pr); err != nil {
+		return GitHub{}, err
 	}
 
-	return GitHubPR{
-		Title: p.Title,
-		Body:  buf.String(),
-		Head:  p.Head,
-		Base:  p.Base,
+	return GitHub{
+		Owner: pr.Owner,
+		Repo:  pr.Repo,
+		Token: pr.Token,
+		GitHubPR: GitHubPR{
+			Title: pr.Title,
+			Body:  buf.String(),
+			Head:  pr.Head,
+			Base:  pr.Base,
+		},
 	}, nil
 }
