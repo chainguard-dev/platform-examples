@@ -90,6 +90,7 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 		RefSpecs: []config.RefSpec{
 			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", opts.Branch, opts.Branch)),
 		},
+		// TODO: abstract this for other platforms
 		Auth: &http.BasicAuth{
 			Username: "x-access-token",
 			Password: opts.Token,

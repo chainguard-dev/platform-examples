@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/chainguard-dev/platform-examples/digestabotctl/platforms"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -47,6 +48,8 @@ func bindPRFlags(cmd *cobra.Command) {
 	viper.BindPFlag("base", cmd.Flags().Lookup("base"))
 	viper.BindPFlag("title", cmd.Flags().Lookup("title"))
 	viper.BindPFlag("token", cmd.Flags().Lookup("token"))
+	viper.BindPFlag("description", cmd.Flags().Lookup("description"))
+	viper.BindPFlag("platform", cmd.Flags().Lookup("platform"))
 }
 
 // prFlags adds the pr flags to the passed in command
@@ -58,4 +61,6 @@ func prFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("base", "main", "branch for PR to merge into")
 	cmd.PersistentFlags().String("title", "Updating image digests", "PR title")
 	cmd.PersistentFlags().String("token", "", "API token")
+	cmd.PersistentFlags().String("description", "Updating image digests", "PR description")
+	cmd.PersistentFlags().String("platform", "", fmt.Sprintf("Platform to create the PR. Options are %s", platforms.ValidPlatforms))
 }
