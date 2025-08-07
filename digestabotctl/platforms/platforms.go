@@ -11,7 +11,7 @@ import (
 var successCodes = []int{200, 201, 202, 203, 204}
 
 var (
-	ValidPlatforms = []string{"github"}
+	ValidPlatforms = []string{"github", "gitlab"}
 	ErrBadResponse = fmt.Errorf("request was unsuccessful")
 )
 

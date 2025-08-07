@@ -116,6 +116,19 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 			return nil
 
 		}
+	case "gitlab":
+		{
+			gl, err := platforms.NewGitLab(pr)
+			if err != nil {
+				return err
+			}
+
+			if err := platforms.CreatePR(gl); err != nil {
+				return err
+			}
+
+			return nil
+		}
 	default:
 		{
 			return fmt.Errorf("invalid platform")
