@@ -13,10 +13,11 @@ import (
 )
 
 var filesCmd = &cobra.Command{
-	Use:     "files",
-	Short:   "Update digest hashes in files",
-	RunE:    files,
-	PreRunE: validateFiles,
+	Use:          "files",
+	Short:        "Update digest hashes in files",
+	RunE:         files,
+	PreRunE:      validateFiles,
+	SilenceUsage: true,
 }
 
 var requiredPRFlags = []string{
