@@ -19,9 +19,11 @@ digestabotctl update files [flags]
       --branch string        branch for commit
       --config string        config file (default is $HOME/.digestabot.json)
       --create-pr            Create a PR
+      --description string   PR description (default "Updating image digests")
   -d, --directory string     Directory to update files (default ".")
   -f, --file-types strings   Files to update (default [*.yaml,*.yml,*.sh,*.tf,*.tfvars,Dockerfile*,Makefile*])
       --owner string         Repo owner/organization
+      --platform string      Platform to create the PR. Options are [github]
       --repo string          Repo name
       --title string         PR title (default "Updating image digests")
       --token string         API token

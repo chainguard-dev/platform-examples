@@ -8,10 +8,12 @@ Command to control updates to digests
       --base string          branch for PR to merge into (default "main")
       --branch string        branch for commit
       --create-pr            Create a PR
+      --description string   PR description (default "Updating image digests")
   -d, --directory string     Directory to update files (default ".")
   -f, --file-types strings   Files to update (default [*.yaml,*.yml,*.sh,*.tf,*.tfvars,Dockerfile*,Makefile*])
   -h, --help                 help for update
       --owner string         Repo owner/organization
+      --platform string      Platform to create the PR. Options are [github]
       --repo string          Repo name
       --title string         PR title (default "Updating image digests")
       --token string         API token
