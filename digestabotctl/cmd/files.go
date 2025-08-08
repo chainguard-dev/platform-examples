@@ -115,7 +115,6 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 			}
 
 			return nil
-
 		}
 	case "gitlab":
 		{
@@ -132,7 +131,7 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 		}
 	default:
 		{
-			return fmt.Errorf("invalid platform")
+			return platforms.ErrInvalidPlatform
 		}
 	}
 }

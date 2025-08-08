@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,8 +12,9 @@ import (
 var successCodes = []int{200, 201, 202, 203, 204}
 
 var (
-	ValidPlatforms = []string{"github", "gitlab"}
-	ErrBadResponse = fmt.Errorf("request was unsuccessful")
+	ValidPlatforms     = []string{"github", "gitlab"}
+	ErrBadResponse     = errors.New("request was unsuccessful")
+	ErrInvalidPlatform = errors.New("invalid platform")
 )
 
 var prTemplate = `{{ $tick := "` + "```" + `" -}}
