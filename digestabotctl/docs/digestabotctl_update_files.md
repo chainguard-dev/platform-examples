@@ -9,7 +9,9 @@ digestabotctl update files [flags]
 ### Options
 
 ```
-  -h, --help   help for files
+  -d, --directory string     Directory to update files (default ".")
+  -f, --file-types strings   Files to update (default [*.yaml,*.yml,*.sh,*.tf,*.tfvars,Dockerfile*,Makefile*])
+  -h, --help                 help for files
 ```
 
 ### Options inherited from parent commands
@@ -20,8 +22,6 @@ digestabotctl update files [flags]
       --config string        config file (default is $HOME/.digestabot.json)
       --create-pr            Create a PR
       --description string   PR description (default "Updating image digests")
-  -d, --directory string     Directory to update files (default ".")
-  -f, --file-types strings   Files to update (default [*.yaml,*.yml,*.sh,*.tf,*.tfvars,Dockerfile*,Makefile*])
       --owner string         Repo owner/organization
       --platform string      Platform to create the PR. Options are [github gitlab]
       --repo string          Repo name
