@@ -6,9 +6,13 @@ import (
 
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
-	Use:              "update",
-	Short:            "Command to control updates to digests",
-	PersistentPreRun: bindUpdateCmdFlags,
+	Use:               "update",
+	Short:             "Command to control updates to digests",
+	PersistentPreRunE: updatePreRunE,
+}
+
+var requiredUpdateFlags = []string{
+	"branch",
 }
 
 func init() {
@@ -16,6 +20,14 @@ func init() {
 	prFlags(updateCmd)
 
 }
-func bindUpdateCmdFlags(cmd *cobra.Command, args []string) {
+
+func updatePreRunE(cmd *cobra.Command, args []string) error {
+	//bind flags for Viper
 	bindPRFlags(cmd)
+
+	if err := validateEnvs(requiredUpdateFlags...); err != nil {
+		return err
+	}
+
+	return nil
 }
