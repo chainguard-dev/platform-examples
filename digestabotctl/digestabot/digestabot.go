@@ -14,6 +14,7 @@ import (
 
 var regex = regexp.MustCompile(`[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*@sha256:[a-z0-9]+`)
 var shaRegex = regexp.MustCompile(`sha256:[a-z0-9]+`)
+var DefaultFileTypes = []string{`*.yaml`, `*.yml`, `*.sh`, `*.tf`, `*.tfvars`, `Dockerfile*`, `Makefile*`}
 
 type Image struct {
 	Name        string

@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -60,6 +61,31 @@ func TestUpdateHashes(t *testing.T) {
 				t.Errorf("expected \n%s \n but got \n%s", v.expected, out)
 			}
 
+		})
+	}
+}
+
+func TestFindFiles(t *testing.T) {
+	tt := []struct {
+		name      string
+		directory string
+		fileTypes []string
+		expected  []string
+	}{
+		{name: "dockerfiles", directory: "../examples", fileTypes: []string{"Dockerfile*"}, expected: []string{"../examples/Dockerfile", "../examples/Dockerfile2", "../examples/nested_dir/Dockerfile"}},
+		{name: "all", directory: "../examples", fileTypes: DefaultFileTypes, expected: []string{"../examples/Dockerfile", "../examples/Dockerfile2", "../examples/Makefile", "../examples/nested_dir/Dockerfile", "../examples/test.yaml"}},
+	}
+
+	for _, v := range tt {
+		t.Run(v.name, func(t *testing.T) {
+			files, err := FindFiles(v.fileTypes, v.directory)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !slices.Equal(v.expected, files) {
+				t.Errorf("expected \n%v \n but got \n%v", v.expected, files)
+			}
 		})
 	}
 }

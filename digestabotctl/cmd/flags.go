@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/chainguard-dev/platform-examples/digestabotctl/digestabot"
 	"github.com/chainguard-dev/platform-examples/digestabotctl/platforms"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -35,7 +36,7 @@ func bindFileFlags(cmd *cobra.Command) {
 
 // fileFlags adds the file flags to the passed in command
 func fileFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringSliceP("file-types", "f", []string{`*.yaml`, `*.yml`, `*.sh`, `*.tf`, `*.tfvars`, `Dockerfile*`, `Makefile*`}, "Files to update")
+	cmd.PersistentFlags().StringSliceP("file-types", "f", digestabot.DefaultFileTypes, "Files to update")
 	cmd.PersistentFlags().StringP("directory", "d", ".", "Directory to update files")
 }
 
