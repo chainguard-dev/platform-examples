@@ -13,11 +13,9 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-	fileFlags(updateCmd)
 	prFlags(updateCmd)
 
 }
 func bindUpdateCmdFlags(cmd *cobra.Command, args []string) {
-	bindFileFlags(cmd)
 	bindPRFlags(cmd)
 }

@@ -30,6 +30,8 @@ var requiredPRFlags = []string{
 
 func init() {
 	updateCmd.AddCommand(filesCmd)
+	fileFlags(filesCmd)
+	bindFileFlags(filesCmd)
 }
 
 func validateFiles(cmd *cobra.Command, args []string) error {

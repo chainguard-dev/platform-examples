@@ -36,8 +36,8 @@ func bindFileFlags(cmd *cobra.Command) {
 
 // fileFlags adds the file flags to the passed in command
 func fileFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringSliceP("file-types", "f", digestabot.DefaultFileTypes, "Files to update")
-	cmd.PersistentFlags().StringP("directory", "d", ".", "Directory to update files")
+	cmd.Flags().StringSliceP("file-types", "f", digestabot.DefaultFileTypes, "Files to update")
+	cmd.Flags().StringP("directory", "d", ".", "Directory to update files")
 }
 
 // bindFileFlags binds the pr flag values to viper
