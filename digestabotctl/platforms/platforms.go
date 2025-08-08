@@ -49,6 +49,7 @@ type RepoData struct {
 	Token string
 }
 
+// Entrypoint to create PR. It's simple but allows us flexibility later.
 func CreatePR(p PRCreator) error {
 	return p.CreatePR()
 }
