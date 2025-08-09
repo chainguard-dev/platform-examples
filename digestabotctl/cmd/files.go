@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"slices"
 	"time"
 
 	"github.com/chainguard-dev/platform-examples/digestabotctl/digestabot"
@@ -43,8 +41,9 @@ func validateFiles(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !slices.Contains(platforms.ValidPlatforms, viper.GetString("platform")) {
-		return fmt.Errorf("invalid platform, valid platforms: %s", platforms.ValidPlatforms)
+	_, ok := platforms.ValidPlatforms[platforms.GitPlatform(viper.GetString("platform"))]
+	if !ok {
+		return platforms.ErrInvalidPlatform
 	}
 
 	return nil
@@ -104,36 +103,15 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 		},
 	}
 
-	switch platform {
-	case "github":
-		{
-			gh, err := platforms.NewGitHub(pr)
-			if err != nil {
-				return err
-			}
-
-			if err := platforms.CreatePR(gh); err != nil {
-				return err
-			}
-
-			return nil
-		}
-	case "gitlab":
-		{
-			gl, err := platforms.NewGitLab(pr)
-			if err != nil {
-				return err
-			}
-
-			if err := platforms.CreatePR(gl); err != nil {
-				return err
-			}
-
-			return nil
-		}
-	default:
-		{
-			return platforms.ErrInvalidPlatform
-		}
+	platformFunc := platforms.ValidPlatforms[platforms.GitPlatform(platform)]
+	if platformFunc == nil {
+		return platforms.ErrInvalidPlatform
 	}
+
+	creator, err := platformFunc(pr)
+	if err != nil {
+		return err
+	}
+
+	return creator.CreatePR()
 }

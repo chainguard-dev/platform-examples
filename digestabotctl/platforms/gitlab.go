@@ -45,7 +45,7 @@ func (g GitLab) CreatePR() error {
 	return nil
 }
 
-func NewGitLab(pr PullRequest) (GitLab, error) {
+func NewGitLab(pr PullRequest) (PRCreator, error) {
 	temp := template.Must(template.New("file").Parse(prTemplate))
 	var buf = bytes.Buffer{}
 	if err := temp.Execute(&buf, pr); err != nil {

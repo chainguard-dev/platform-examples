@@ -45,7 +45,7 @@ func (g GitHub) CreatePR() error {
 	return nil
 }
 
-func NewGitHub(pr PullRequest) (GitHub, error) {
+func NewGitHub(pr PullRequest) (PRCreator, error) {
 	temp := template.Must(template.New("file").Parse(prTemplate))
 	var buf = bytes.Buffer{}
 	if err := temp.Execute(&buf, pr); err != nil {

@@ -3,6 +3,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/chainguard-dev/platform-examples/digestabotctl/digestabot"
 	"github.com/chainguard-dev/platform-examples/digestabotctl/platforms"
@@ -63,5 +65,5 @@ func prFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("title", "Updating image digests", "PR title")
 	cmd.PersistentFlags().String("token", "", "API token")
 	cmd.PersistentFlags().String("description", "Updating image digests", "PR description")
-	cmd.PersistentFlags().String("platform", "", fmt.Sprintf("Platform to create the PR. Options are %s", platforms.ValidPlatforms))
+	cmd.PersistentFlags().String("platform", "", fmt.Sprintf("Platform to create the PR. Options are %s", slices.Collect(maps.Keys(platforms.ValidPlatforms))))
 }
