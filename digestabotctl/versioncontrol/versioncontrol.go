@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-git/go-git/v6"
-	"github.com/go-git/go-git/v6/config"
-	"github.com/go-git/go-git/v6/plumbing"
-	"github.com/go-git/go-git/v6/plumbing/object"
-	"github.com/go-git/go-git/v6/plumbing/transport/http"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 type CommitOptions struct {
@@ -20,6 +20,7 @@ type CommitOptions struct {
 	When      time.Time
 	Branch    string
 	Token     string
+	Signer    git.Signer
 }
 
 type CheckoutResponse struct {
@@ -67,6 +68,8 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 	}
 
 	commitOptions := &git.CommitOptions{
+		All:    true,
+		Signer: opts.Signer,
 		Author: &object.Signature{
 			Name:  opts.Name,
 			Email: opts.Email,
@@ -74,7 +77,7 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 		},
 	}
 
-	hash, err := w.Commit(opts.Message, commitOptions)
+	hash, err := w.Commit(fmt.Sprintf("%s\n", opts.Message), commitOptions)
 	if err != nil {
 		return "", err
 	}
@@ -86,7 +89,6 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 
 	if err := r.Push(&git.PushOptions{
 		RemoteName: "origin",
-		Force:      true,
 		RefSpecs: []config.RefSpec{
 			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", opts.Branch, opts.Branch)),
 		},

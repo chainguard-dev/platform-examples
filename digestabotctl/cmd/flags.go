@@ -53,6 +53,10 @@ func bindPRFlags(cmd *cobra.Command) {
 	viper.BindPFlag("token", cmd.Flags().Lookup("token"))
 	viper.BindPFlag("description", cmd.Flags().Lookup("description"))
 	viper.BindPFlag("platform", cmd.Flags().Lookup("platform"))
+	viper.BindPFlag("sign", cmd.Flags().Lookup("sign"))
+	viper.BindPFlag("signing-token", cmd.Flags().Lookup("signing-token"))
+	viper.BindPFlag("name", cmd.Flags().Lookup("name"))
+	viper.BindPFlag("email", cmd.Flags().Lookup("email"))
 }
 
 // prFlags adds the pr flags to the passed in command
@@ -66,4 +70,8 @@ func prFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("token", "", "API token")
 	cmd.PersistentFlags().String("description", "Updating image digests", "PR description")
 	cmd.PersistentFlags().String("platform", "", fmt.Sprintf("Platform to create the PR. Options are %s", slices.Collect(maps.Keys(platforms.ValidPlatforms))))
+	cmd.PersistentFlags().Bool("sign", false, "Sign the commit")
+	cmd.PersistentFlags().String("signing-token", "", "OIDC token for signing commit")
+	cmd.PersistentFlags().String("name", "digestabotctl", "Name for commit")
+	cmd.PersistentFlags().String("email", "", "Email for commit")
 }

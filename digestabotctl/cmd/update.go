@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"github.com/chainguard-dev/platform-examples/digestabotctl/versioncontrol"
+	"github.com/go-git/go-git/v6"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // updateCmd represents the update command
@@ -14,6 +17,8 @@ var updateCmd = &cobra.Command{
 var requiredUpdateFlags = []string{
 	"branch",
 }
+
+var signer git.Signer
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
@@ -28,6 +33,12 @@ func updatePreRunE(cmd *cobra.Command, args []string) error {
 	if err := validateEnvs(requiredUpdateFlags...); err != nil {
 		return err
 	}
-
+	if viper.GetBool("sign") {
+		var err error
+		signer, err = versioncontrol.NewSigner(cmd.Context())
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

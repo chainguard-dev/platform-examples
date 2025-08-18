@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"slices"
 	"time"
@@ -44,7 +45,7 @@ var prTemplate = `{{ $tick := "` + "```" + `" -}}
 `
 
 type PRCreator interface {
-	CreatePR() error
+	CreatePR(*slog.Logger) error
 }
 
 type PullRequest struct {
@@ -63,8 +64,8 @@ type RepoData struct {
 }
 
 // Entrypoint to create PR. It's simple but allows us flexibility later.
-func CreatePR(p PRCreator) error {
-	return p.CreatePR()
+func CreatePR(p PRCreator, logger *slog.Logger) error {
+	return p.CreatePR(logger)
 }
 
 func sendRequest(req *http.Request) ([]byte, error) {
