@@ -95,6 +95,10 @@ resource "google_cloud_run_service" "image-copy" {
           name  = "IGNORE_REFERRERS"
           value = var.ignore_referrers
         }
+        env {
+          name  = "VERIFY_SIGNATURES"
+          value = var.verify_signatures
+        }
       }
     }
   }
@@ -155,6 +159,29 @@ resource "chainguard_rolebinding" "puller" {
   identity = chainguard_identity.puller-identity.id
   group    = data.chainguard_group.group.id
   role     = data.chainguard_role.puller.items[0].id
+}
+
+# Create a role that can find the catalog_syncer and apko_builder identities
+# for signature verification
+resource "chainguard_role" "verifier" {
+  count = var.verify_signatures ? 1 : 0
+
+  parent_id   = data.chainguard_group.group.id
+  name        = "${var.name}-image-copy-verifier"
+  description = "Custom role for ${var.name}-image-copy image verification"
+
+  capabilities = [
+    "identity.list",
+  ]
+}
+
+# Grant the identity the custom role on the root group.
+resource "chainguard_rolebinding" "verifier" {
+  count = var.verify_signatures ? 1 : 0
+
+  identity = chainguard_identity.puller-identity.id
+  group    = data.chainguard_group.group.id
+  role     = chainguard_role.verifier[0].id
 }
 
 # Create a subscription to notify the Cloud Run service on changes under the root group.

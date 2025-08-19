@@ -37,6 +37,9 @@ module "image-copy" {
 
   # Don't copy referrers like signatures and attestations
   # ignore_referrers = true
+
+  # Verify signatures before copying an image
+  # verify_signatures = true
 }
 ```
 

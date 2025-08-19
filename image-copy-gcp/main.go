@@ -10,12 +10,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 
 	"chainguard.dev/sdk/events"
 	"chainguard.dev/sdk/events/receiver"
 	"chainguard.dev/sdk/events/registry"
+	iam "chainguard.dev/sdk/proto/platform/iam/v1"
 	v1 "chainguard.dev/sdk/proto/platform/registry/v1"
+
 	"chainguard.dev/sdk/sts"
 	"cloud.google.com/go/compute/metadata"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -24,24 +27,33 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/google"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
+	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 	"google.golang.org/api/idtoken"
 )
 
 type envConfig struct {
-	APIEndpoint     string `envconfig:"API_ENDPOINT" required:"true"`
-	Issuer          string `envconfig:"ISSUER_URL" required:"true"`
-	GroupName       string `envconfig:"GROUP_NAME" required:"true"`
-	Group           string `envconfig:"GROUP" required:"true"`
-	Identity        string `envconfig:"IDENTITY" required:"true"`
-	Port            int    `envconfig:"PORT" default:"8080" required:"true"`
-	DstRepo         string `envconfig:"DST_REPO" required:"true"` // Almost fully qualified at this point, just needs the final component.
-	IgnoreReferrers bool   `envconfig:"IGNORE_REFERRERS" required:"true"`
+	APIEndpoint      string `envconfig:"API_ENDPOINT" required:"true"`
+	Issuer           string `envconfig:"ISSUER_URL" required:"true"`
+	GroupName        string `envconfig:"GROUP_NAME" required:"true"`
+	Group            string `envconfig:"GROUP" required:"true"`
+	Identity         string `envconfig:"IDENTITY" required:"true"`
+	Port             int    `envconfig:"PORT" default:"8080" required:"true"`
+	DstRepo          string `envconfig:"DST_REPO" required:"true"` // Almost fully qualified at this point, just needs the final component.
+	IgnoreReferrers  bool   `envconfig:"IGNORE_REFERRERS" required:"true"`
+	VerifySignatures bool   `envconfig:"VERIFY_SIGNATURES" required:"true"`
 }
 
 var location, sa string
 var srcRepo name.Repository
 var env envConfig
+
+var keychain = authn.NewMultiKeychain(
+	google.Keychain,
+	cgKeychain{},
+)
 
 func init() {
 	var err error
@@ -102,12 +114,18 @@ func main() {
 
 		src := "cgr.dev/" + env.GroupName + "/" + repoName + ":" + body.Tag
 		dst := env.DstRepo + "/" + repoName + ":" + body.Tag
+
+		// Optionally verify the image signature.
+		if env.VerifySignatures && !strings.HasPrefix(body.Tag, "sha256-") {
+			log.Printf("Verifying signatures for %s...", src)
+			src, err = verifyImageSignatures(ctx, src)
+			if err != nil {
+				return fmt.Errorf("verifying signature: %w", err)
+			}
+		}
+
 		log.Printf("Copying %s to %s...", src, dst)
-		if err := crane.Copy(src, dst,
-			crane.WithAuthFromKeychain(authn.NewMultiKeychain(
-				google.Keychain,
-				cgKeychain{},
-			))); err != nil {
+		if err := crane.Copy(src, dst, crane.WithAuthFromKeychain(keychain)); err != nil {
 			return fmt.Errorf("copying image: %w", err)
 		}
 		log.Println("Copied!")
@@ -198,4 +216,97 @@ func (k cgKeychain) Resolve(res authn.Resource) (authn.Authenticator, error) {
 		Username: "_token",
 		Password: tok.AccessToken,
 	}, nil
+}
+
+func verifyImageSignatures(ctx context.Context, src string) (string, error) {
+	ref, err := name.ParseReference(src)
+	if err != nil {
+		return "", fmt.Errorf("parsing reference: %s: %w", src, err)
+	}
+
+	// Resolve the tag to the underlying digest so that we know we're
+	// operating on the same image across all the commands we run
+	digest, err := resolveDigest(ctx, ref)
+	if err != nil {
+		return "", fmt.Errorf("resolving digest for %s: %w", ref, err)
+	}
+
+	co, err := checkOpts(ctx)
+	if err != nil {
+		return "", fmt.Errorf("creating check opts: %w", err)
+	}
+
+	if _, _, err := cosign.VerifyImageSignatures(ctx, digest, co); err != nil {
+		return "", fmt.Errorf("verifying image signatures: %w", err)
+	}
+
+	// Return the digest reference so that we can copy the same image we
+	// verified
+	return digest.String(), nil
+}
+
+func resolveDigest(ctx context.Context, ref name.Reference) (name.Digest, error) {
+	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain))
+	if err != nil {
+		return name.Digest{}, fmt.Errorf("getting descriptor: %w", err)
+	}
+
+	return ref.Context().Digest(desc.Digest.String()), nil
+}
+
+func checkOpts(ctx context.Context) (*cosign.CheckOpts, error) {
+	// Generate a token for the Chainguard API
+	tok, err := newToken(ctx, env.APIEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("getting token: %w", err)
+	}
+
+	// Create client that uses the token
+	client, err := iam.NewClients(ctx, env.APIEndpoint, tok.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("creating IAM clients: %w", err)
+	}
+
+	trusted, err := cosign.TrustedRoot()
+	if err != nil {
+		return nil, fmt.Errorf("fetching trusted root: %w", err)
+	}
+
+	co := &cosign.CheckOpts{
+		TrustedMaterial: trusted,
+		RegistryClientOpts: []ociremote.Option{
+			ociremote.WithMoreRemoteOptions(remote.WithAuthFromKeychain(keychain)),
+		},
+		Identities: []cosign.Identity{
+			{
+				Issuer:  "https://token.actions.githubusercontent.com",
+				Subject: "https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main",
+			},
+		},
+	}
+
+	// Find the ids of the APKO_BUILDER and CATALOG_SYNCER and
+	// add them to the list of trusted identities
+	principals := []iam.ServicePrincipal{
+		iam.ServicePrincipal_APKO_BUILDER,
+		iam.ServicePrincipal_CATALOG_SYNCER,
+	}
+	ids, err := client.Identities().List(ctx, &iam.IdentityFilter{})
+	if err != nil {
+		return nil, fmt.Errorf("listing identities: %w", err)
+	}
+	if ids == nil || len(ids.Items) == 0 {
+		return nil, fmt.Errorf("no identities were found")
+	}
+	for _, id := range ids.Items {
+		if !slices.Contains(principals, id.GetServicePrincipal()) {
+			continue
+		}
+		co.Identities = append(co.Identities, cosign.Identity{
+			Issuer:  "https://issuer.enforce.dev",
+			Subject: fmt.Sprintf("https://issuer.enforce.dev/%s", id.Id),
+		})
+	}
+
+	return co, nil
 }
