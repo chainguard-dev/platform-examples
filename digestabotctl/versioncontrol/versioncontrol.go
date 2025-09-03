@@ -31,12 +31,12 @@ type CheckoutResponse struct {
 func Checkout(opts CommitOptions) (CheckoutResponse, error) {
 	r, err := git.PlainOpen(opts.Directory)
 	if err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git open: %w", err)
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git worktree: %w", err)
 	}
 
 	create := false
@@ -45,14 +45,14 @@ func Checkout(opts CommitOptions) (CheckoutResponse, error) {
 	if err != nil && errors.Is(err, plumbing.ErrReferenceNotFound) {
 		create = true
 	} else if err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git branch reference: %w", err)
 	}
 
 	if err := w.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(opts.Branch),
 		Create: create,
 	}); err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git checkout: %w", err)
 	}
 
 	return CheckoutResponse{
@@ -64,7 +64,7 @@ func Checkout(opts CommitOptions) (CheckoutResponse, error) {
 
 func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (string, error) {
 	if err := w.AddWithOptions(&git.AddOptions{All: true}); err != nil {
-		return "", err
+		return "", fmt.Errorf("git add: %w", err)
 	}
 
 	commitOptions := &git.CommitOptions{
@@ -79,12 +79,12 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 
 	hash, err := w.Commit(fmt.Sprintf("%s\n", opts.Message), commitOptions)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("commit hash: %w", err)
 	}
 
 	commit, err := r.CommitObject(hash)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("git commit: %w", err)
 	}
 
 	if err := r.Push(&git.PushOptions{
@@ -98,16 +98,16 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 			Password: opts.Token,
 		},
 	}); err != nil {
-		return "", err
+		return "", fmt.Errorf("git push: %w", err)
 	}
 
 	parent, err := commit.Parent(0)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("git parent: %w", err)
 	}
 	patch, err := parent.Patch(commit)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("commit patch: %w", err)
 	}
 
 	return patch.String(), err

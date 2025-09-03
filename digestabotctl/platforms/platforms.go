@@ -83,7 +83,7 @@ func sendRequest(req *http.Request) ([]byte, error) {
 	}
 
 	if !slices.Contains(successCodes, resp.StatusCode) {
-		return nil, fmt.Errorf("%w status: %d body: %s", ErrBadResponse, resp.StatusCode, string(body))
+		return nil, fmt.Errorf("%v status: %d body: %s", ErrBadResponse, resp.StatusCode, string(body))
 	}
 
 	return body, nil
