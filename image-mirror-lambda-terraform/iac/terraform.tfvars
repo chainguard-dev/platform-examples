@@ -7,7 +7,7 @@ name_prefix = "image-copy-all"
 # optional: dst_prefix = "mirrors"
 
 # identity id (username) for your pull token
-cgr_username = "b3afeb8ee1de8a24fe87ccb26faee88b5ba3cac0/7d8f1d77937ae3d2"
+cgr_username = "<PULL_TOKEN_USERNAME>"
 
 mirror_dry_run = false
 
