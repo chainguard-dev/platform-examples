@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-git/go-git/v6"
-	"github.com/go-git/go-git/v6/config"
-	"github.com/go-git/go-git/v6/plumbing"
-	"github.com/go-git/go-git/v6/plumbing/object"
-	"github.com/go-git/go-git/v6/plumbing/transport/http"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 type CommitOptions struct {
@@ -20,6 +20,7 @@ type CommitOptions struct {
 	When      time.Time
 	Branch    string
 	Token     string
+	Signer    git.Signer
 }
 
 type CheckoutResponse struct {
@@ -30,12 +31,12 @@ type CheckoutResponse struct {
 func Checkout(opts CommitOptions) (CheckoutResponse, error) {
 	r, err := git.PlainOpen(opts.Directory)
 	if err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git open: %w", err)
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git worktree: %w", err)
 	}
 
 	create := false
@@ -44,14 +45,14 @@ func Checkout(opts CommitOptions) (CheckoutResponse, error) {
 	if err != nil && errors.Is(err, plumbing.ErrReferenceNotFound) {
 		create = true
 	} else if err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git branch reference: %w", err)
 	}
 
 	if err := w.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(opts.Branch),
 		Create: create,
 	}); err != nil {
-		return CheckoutResponse{}, err
+		return CheckoutResponse{}, fmt.Errorf("git checkout: %w", err)
 	}
 
 	return CheckoutResponse{
@@ -63,10 +64,12 @@ func Checkout(opts CommitOptions) (CheckoutResponse, error) {
 
 func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (string, error) {
 	if err := w.AddWithOptions(&git.AddOptions{All: true}); err != nil {
-		return "", err
+		return "", fmt.Errorf("git add: %w", err)
 	}
 
 	commitOptions := &git.CommitOptions{
+		All:    true,
+		Signer: opts.Signer,
 		Author: &object.Signature{
 			Name:  opts.Name,
 			Email: opts.Email,
@@ -74,19 +77,18 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 		},
 	}
 
-	hash, err := w.Commit(opts.Message, commitOptions)
+	hash, err := w.Commit(fmt.Sprintf("%s\n", opts.Message), commitOptions)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("commit hash: %w", err)
 	}
 
 	commit, err := r.CommitObject(hash)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("git commit: %w", err)
 	}
 
 	if err := r.Push(&git.PushOptions{
 		RemoteName: "origin",
-		Force:      true,
 		RefSpecs: []config.RefSpec{
 			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", opts.Branch, opts.Branch)),
 		},
@@ -96,16 +98,16 @@ func CommitAndPush(r *git.Repository, w *git.Worktree, opts CommitOptions) (stri
 			Password: opts.Token,
 		},
 	}); err != nil {
-		return "", err
+		return "", fmt.Errorf("git push: %w", err)
 	}
 
 	parent, err := commit.Parent(0)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("git parent: %w", err)
 	}
 	patch, err := parent.Patch(commit)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("commit patch: %w", err)
 	}
 
 	return patch.String(), err

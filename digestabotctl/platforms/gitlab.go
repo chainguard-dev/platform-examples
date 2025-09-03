@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"text/template"
 )
@@ -22,12 +23,13 @@ type GitLabMR struct {
 	Target      string `json:"target_branch"`
 }
 
-func (g GitLab) CreatePR() error {
+func (g GitLab) CreatePR(logger *slog.Logger) error {
 	url := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/merge_requests", g.Repo)
 	body, err := json.Marshal(g.GitLabMR)
 	if err != nil {
 		return err
 	}
+	logger.Debug(string(body))
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
@@ -37,10 +39,11 @@ func (g GitLab) CreatePR() error {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", g.Token))
 	req.Header.Add("Content-Type", "application/json")
 
-	_, err = sendRequest(req)
+	resp, err := sendRequest(req)
 	if err != nil {
 		return err
 	}
+	logger.Debug(string(resp))
 
 	return nil
 }

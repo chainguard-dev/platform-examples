@@ -24,6 +24,7 @@ var requiredPRFlags = []string{
 	"branch",
 	"token",
 	"platform",
+	"email",
 }
 
 func init() {
@@ -56,6 +57,9 @@ func files(cmd *cobra.Command, args []string) error {
 		When:      time.Now(),
 		Branch:    viper.GetString("branch"),
 		Token:     viper.GetString("token"),
+		Signer:    signer,
+		Name:      viper.GetString("name"),
+		Email:     viper.GetString("email"),
 	}
 
 	checkout, err := versioncontrol.Checkout(opts)
@@ -113,5 +117,5 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 		return err
 	}
 
-	return creator.CreatePR()
+	return creator.CreatePR(cfg.Logger)
 }

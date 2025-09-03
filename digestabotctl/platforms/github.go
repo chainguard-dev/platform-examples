@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"text/template"
 )
@@ -22,12 +23,13 @@ type GitHubPR struct {
 	Base  string `json:"base"`
 }
 
-func (g GitHub) CreatePR() error {
+func (g GitHub) CreatePR(logger *slog.Logger) error {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls", g.Owner, g.Repo)
 	body, err := json.Marshal(g.GitHubPR)
 	if err != nil {
 		return err
 	}
+	logger.Debug(string(body))
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
@@ -37,10 +39,11 @@ func (g GitHub) CreatePR() error {
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", g.Token))
 
-	_, err = sendRequest(req)
+	resp, err := sendRequest(req)
 	if err != nil {
 		return err
 	}
+	logger.Debug(string(resp))
 
 	return nil
 }
