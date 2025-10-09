@@ -68,7 +68,6 @@ func (g GitHub) CreatePR(logger *slog.Logger) error {
 }
 
 func (g GitHub) CreateLabels(logger *slog.Logger, pr int) error {
-	fmt.Println(pr)
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/labels", g.Owner, g.Repo, pr)
 	labelRequest := GitHubPRLabelRequest{
 		Labels: g.GitHubPR.Labels,
