@@ -57,6 +57,7 @@ func bindPRFlags(cmd *cobra.Command) {
 	viper.BindPFlag("signing-token", cmd.Flags().Lookup("signing-token"))
 	viper.BindPFlag("name", cmd.Flags().Lookup("name"))
 	viper.BindPFlag("email", cmd.Flags().Lookup("email"))
+	viper.BindPFlag("labels", cmd.Flags().Lookup("labels"))
 }
 
 // prFlags adds the pr flags to the passed in command
@@ -74,4 +75,5 @@ func prFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("signing-token", "", "OIDC token for signing commit")
 	cmd.PersistentFlags().String("name", "digestabotctl", "Name for commit")
 	cmd.PersistentFlags().String("email", "", "Email for commit")
+	cmd.PersistentFlags().StringSlice("labels", []string{"automated pr", "kind/cleanup", "release-note-none"}, "Labels to apply to the PR")
 }

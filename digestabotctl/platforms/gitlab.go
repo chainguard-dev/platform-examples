@@ -21,6 +21,7 @@ type GitLabMR struct {
 	Description string `json:"description"`
 	Source      string `json:"source_branch"`
 	Target      string `json:"target_branch"`
+	Labels      []string
 }
 
 func (g GitLab) CreatePR(logger *slog.Logger) error {

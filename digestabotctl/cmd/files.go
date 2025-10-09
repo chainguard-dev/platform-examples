@@ -100,6 +100,7 @@ func handlePRForPlatform(platform string, checkout versioncontrol.CheckoutRespon
 		Diff:        commit,
 		Base:        viper.GetString("base"),
 		Head:        viper.GetString("branch"),
+		Labels:      viper.GetStringSlice("labels"),
 		RepoData: platforms.RepoData{
 			Repo:  viper.GetString("repo"),
 			Owner: viper.GetString("owner"),
