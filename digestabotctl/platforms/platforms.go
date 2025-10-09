@@ -54,6 +54,7 @@ type PullRequest struct {
 	Diff        string
 	Base        string
 	Head        string
+	Labels      []string
 	RepoData
 }
 
