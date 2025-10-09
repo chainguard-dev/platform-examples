@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"text/template"
 )
 
@@ -21,7 +22,7 @@ type GitLabMR struct {
 	Description string `json:"description"`
 	Source      string `json:"source_branch"`
 	Target      string `json:"target_branch"`
-	Labels      []string
+	Labels      string `json:"labels"`
 }
 
 func (g GitLab) CreatePR(logger *slog.Logger) error {
@@ -65,6 +66,7 @@ func NewGitLab(pr PullRequest) (PRCreator, error) {
 			Description: buf.String(),
 			Source:      pr.Head,
 			Target:      pr.Base,
+			Labels:      strings.Join(pr.Labels, ","),
 		},
 	}, nil
 }
