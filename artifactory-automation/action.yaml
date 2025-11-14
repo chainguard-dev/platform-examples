@@ -1,0 +1,103 @@
+name: Artifactory Automation
+description: Automates the updating of Chainguard pull tokens and authentication for an Artifactory repository.
+
+inputs:
+  # String inputs
+  identity:
+    description: 'Github assumable identity to Chainguard'
+    required: true
+  
+  organization:
+    description: 'Chainguard Organization Name'
+    required: true
+
+  artifactory_url:
+    description: 'The url to your artifactory instance'
+    required: true
+
+  artifactory_user:
+    description: 'The username for artifactory'
+    required: true
+
+  artifactory_repository_name:
+    description: 'The name of the artifactory repository to update'
+    required: true
+
+  artifactory_token:
+    description: 'API token for deployment'
+    required: true
+
+  ttl:
+    description: 'TTL for the token ex: 1h (default is 7 days)'
+    required: false
+    default: 168h
+
+  prune_expired:
+    description: 'Prune expired tokens (requires identity.list, identity.delete permissions)'
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+    - name: "Auth"
+      uses: chainguard-dev/setup-chainctl@272698817627c158bbd813cb783b62a4b9bbbc67
+      with:
+        identity: ${{ inputs.identity }}
+
+    - name: Create Token
+      shell: bash
+      id: create_token
+      env:
+        ORGANIZATION: ${{ inputs.organization }}
+        TTL: ${{ inputs.ttl }}
+        PRUNE: ${{ inputs.prune_expired }}
+      run: |
+        if [[ $PRUNE = "true" ]]; then
+          for id in $(chainctl iam identities list --parent "$ORGANIZATION" --name "pull token - registry" --expired -o json | jq -r '.items[]?.id'); do
+            echo "Deleting old pull token $id"
+            chainctl iam identities delete $id --parent "$ORGANIZATION" -y
+          done 
+        fi
+
+        PULL_TOKEN_JSON=$(chainctl auth pull-token --ttl "$TTL" --output json)
+
+        user=$(jq -r '.identity_id' <<<$PULL_TOKEN_JSON)
+        password=$(jq -r '.token' <<<$PULL_TOKEN_JSON)
+
+        echo "user=$user" >> $GITHUB_OUTPUT
+        echo "password=$password" >> $GITHUB_OUTPUT
+
+    - name: Update Artifactory Registry
+      shell: bash
+      id: update-artifactory
+      env:
+        TOKEN_USER: ${{ steps.create_token.outputs.user }}
+        TOKEN_PASSWORD: ${{ steps.create_token.outputs.password }}
+        ARTIFACTORY_USER: ${{ inputs.artifactory_user }}
+        ARTIFACTORY_TOKEN: ${{ inputs.artifactory_token }}
+        ARTIFACTORY_URL: ${{ inputs.artifactory_url }}
+        ARTIFACTORY_REPOSITORY_NAME: ${{ inputs.artifactory_repository_name }}
+      run: |
+        RESP=$(curl -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" \
+        --silent --write-out "HTTPSTATUS:%{http_code}" \
+        -X POST \
+        "$ARTIFACTORY_URL/artifactory/api/repositories/$ARTIFACTORY_REPOSITORY_NAME" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "key": "'$ARTIFACTORY_REPOSITORY_NAME'",
+          "username": "'$TOKEN_USER'",
+          "password": "'$TOKEN_PASSWORD'"
+        }')
+
+        BODY=$(echo $RESP | sed -e 's/HTTPSTATUS\:.*//g')
+        STATUS=$(echo $RESP | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+
+        if [ "$STATUS" -ne 200 ]; then
+          echo "Error $STATUS": $BODY
+          exit 1
+        fi
+
+        echo $BODY
