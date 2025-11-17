@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: "Setup Artifactory Token"
-        uses: chainguard-dev/artifactory-automation
+        uses: <where-your-action-lives>
         with:
           identity: "some-chainguard/assumable-identity"
           organization: test.com
