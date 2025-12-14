@@ -22,13 +22,18 @@ jobs:
           - tag-history
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version-file: ${{ matrix.image }}/go.mod
 
       - uses: ko-build/setup-ko@3aebd0597dc1e9d1a26bcfdb7cbeb19c131d3037 # v0.7
-      - uses: chainguard-dev/actions/setup-registry@main
+      - uses: chainguard-dev/actions/setup-registry@3e8a2a226fad9e1ecbf2d359b8a7697554a4ac6d # main
 
       - working-directory: ${{ matrix.image }}
         run: |
