@@ -78,3 +78,15 @@ docker run -it --rm image-mapper ghcr.io/stakater/reloader:v1.4.1
 # Or, pass a list of images from a text file
 docker run -i --rm image-mapper -- - < images.txt
 ```
+
+## Development
+
+You can run integration tests against the actual catalog endpoint by setting
+`IMAGE_MAPPER_RUN_INTEGRATION_TESTS=1`:
+
+```
+IMAGE_MAPPER_RUN_INTEGRATION_TESTS=1 go test ./...
+```
+
+This identifies regressions in the mapping logic or the catalog data by
+recording known matches.
