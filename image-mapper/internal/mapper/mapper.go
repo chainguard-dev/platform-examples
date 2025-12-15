@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
 )
@@ -17,8 +16,8 @@ type Mapping struct {
 
 // Mapper maps image references to images in our catalog
 type Mapper struct {
-	repos       []Repo
-	ignoreTiers []string
+	repos     []Repo
+	ignoreFns []IgnoreFn
 }
 
 // NewMapper creates a new mapper
@@ -34,8 +33,8 @@ func NewMapper(ctx context.Context, opts ...Option) (*Mapper, error) {
 	}
 
 	m := &Mapper{
-		repos:       repos,
-		ignoreTiers: o.ignoreTiers,
+		repos:     repos,
+		ignoreFns: o.ignoreFns,
 	}
 
 	return m, nil
@@ -86,9 +85,7 @@ func (m *Mapper) Map(image string) (*Mapping, error) {
 			continue
 		}
 
-		// Exclude specific tiers. Useful for ignoring 'FIPS' tier
-		// images when they aren't relevant.
-		if slices.Contains(m.ignoreTiers, strings.ToLower(cgrrepo.CatalogTier)) {
+		if m.ignoreRepo(cgrrepo) {
 			continue
 		}
 
@@ -108,4 +105,15 @@ func (m *Mapper) Map(image string) (*Mapping, error) {
 		Image:   image,
 		Results: results,
 	}, nil
+}
+
+func (m *Mapper) ignoreRepo(repo Repo) bool {
+	for _, ignore := range m.ignoreFns {
+		if !ignore(repo) {
+			continue
+		}
+		return true
+	}
+
+	return false
 }

@@ -54,6 +54,38 @@ func TestMatch(t *testing.T) {
 			expected: false,
 		},
 		{
+			name:   "basename match iamguarded",
+			refStr: "nginx",
+			repo: &Repo{
+				Name: "nginx-iamguarded",
+			},
+			expected: true,
+		},
+		{
+			name:   "basename match iamguarded fips",
+			refStr: "nginx",
+			repo: &Repo{
+				Name: "nginx-iamguarded-fips",
+			},
+			expected: true,
+		},
+		{
+			name:   "basename match iamguarded registry path",
+			refStr: "gcr.io/project/nginx",
+			repo: &Repo{
+				Name: "nginx-iamguarded",
+			},
+			expected: true,
+		},
+		{
+			name:   "basename match iamguarded fips registry path",
+			refStr: "gcr.io/project/nginx",
+			repo: &Repo{
+				Name: "nginx-iamguarded-fips",
+			},
+			expected: true,
+		},
+		{
 			name:   "basename match fips",
 			refStr: "nginx",
 			repo: &Repo{
@@ -98,6 +130,38 @@ func TestMatch(t *testing.T) {
 			refStr: "stakater/reloader",
 			repo: &Repo{
 				Name: "stakater-reloader-fips",
+			},
+			expected: true,
+		},
+		{
+			name:   "dashname match iamguarded",
+			refStr: "stakater/reloader",
+			repo: &Repo{
+				Name: "stakater-reloader-iamguarded",
+			},
+			expected: true,
+		},
+		{
+			name:   "dashname match iamguarded fips",
+			refStr: "stakater/reloader",
+			repo: &Repo{
+				Name: "stakater-reloader-iamguarded-fips",
+			},
+			expected: true,
+		},
+		{
+			name:   "dashname match iamguarded registry path",
+			refStr: "registry.example.com/stakater/reloader",
+			repo: &Repo{
+				Name: "stakater-reloader-iamguarded",
+			},
+			expected: true,
+		},
+		{
+			name:   "dashname match iamguarded fips registry path",
+			refStr: "registry.example.com/stakater/reloader",
+			repo: &Repo{
+				Name: "stakater-reloader-iamguarded-fips",
 			},
 			expected: true,
 		},

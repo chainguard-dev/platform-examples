@@ -92,8 +92,8 @@ func TestMapperMap(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			m := &Mapper{
-				repos:       tc.repos,
-				ignoreTiers: []string{"fips"},
+				repos:     tc.repos,
+				ignoreFns: []IgnoreFn{IgnoreTiers([]string{"fips"})},
 			}
 
 			result, err := m.Map(tc.image)
@@ -139,8 +139,7 @@ func TestMapperMapAll(t *testing.T) {
 	}
 
 	m := &Mapper{
-		repos:       repos,
-		ignoreTiers: []string{},
+		repos: repos,
 	}
 
 	images := []string{"nginx", "redis", "postgres"}
@@ -186,8 +185,7 @@ func TestMapperMapAllDuplicates(t *testing.T) {
 	}
 
 	m := &Mapper{
-		repos:       repos,
-		ignoreTiers: []string{},
+		repos: repos,
 	}
 
 	// Include duplicates in the input
@@ -227,10 +225,8 @@ func TestMapperMapAllDuplicates(t *testing.T) {
 
 func TestMapperMapAllIteratorError(t *testing.T) {
 	m := &Mapper{
-		repos:       []Repo{},
-		ignoreTiers: []string{},
+		repos: []Repo{},
 	}
-
 	expectedErr := errors.New("iterator error")
 	iterator := &errorIterator{err: expectedErr}
 
@@ -242,8 +238,7 @@ func TestMapperMapAllIteratorError(t *testing.T) {
 
 func TestMapperMapAllMapError(t *testing.T) {
 	m := &Mapper{
-		repos:       []Repo{},
-		ignoreTiers: []string{},
+		repos: []Repo{},
 	}
 
 	// Use an invalid image that will cause Map to fail
@@ -263,6 +258,367 @@ type errorIterator struct {
 
 func (it *errorIterator) Next() (string, error) {
 	return "", it.err
+}
+
+func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
+	testCases := []struct {
+		name      string
+		image     string
+		repos     []Repo
+		ignoreFns []IgnoreFn
+		expected  *Mapping
+	}{
+		{
+			name:  "ignore repos by name prefix",
+			image: "nginx",
+			repos: []Repo{
+				{
+					Name:        "nginx",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "test-nginx",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"nginx"},
+				},
+				{
+					Name:        "prod-nginx",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"nginx"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				func(repo Repo) bool {
+					return strings.HasPrefix(repo.Name, "test-")
+				},
+			},
+			expected: &Mapping{
+				Image:   "nginx",
+				Results: []string{"nginx", "prod-nginx"},
+			},
+		},
+		{
+			name:  "ignore repos containing specific string",
+			image: "redis",
+			repos: []Repo{
+				{
+					Name:        "redis",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "redis-dev",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"redis"},
+				},
+				{
+					Name:        "redis-prod",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"redis"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				func(repo Repo) bool {
+					return strings.Contains(repo.Name, "-dev")
+				},
+			},
+			expected: &Mapping{
+				Image:   "redis",
+				Results: []string{"redis", "redis-prod"},
+			},
+		},
+		{
+			name:  "multiple custom ignore functions",
+			image: "postgres",
+			repos: []Repo{
+				{
+					Name:        "postgres",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "test-postgres",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"postgres"},
+				},
+				{
+					Name:        "postgres-dev",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"postgres"},
+				},
+				{
+					Name:        "postgres-prod",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"postgres"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				func(repo Repo) bool {
+					return strings.HasPrefix(repo.Name, "test-")
+				},
+				func(repo Repo) bool {
+					return strings.Contains(repo.Name, "-dev")
+				},
+			},
+			expected: &Mapping{
+				Image:   "postgres",
+				Results: []string{"postgres", "postgres-prod"},
+			},
+		},
+		{
+			name:  "ignore repos by exact name match",
+			image: "mysql",
+			repos: []Repo{
+				{
+					Name:        "mysql",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "mysql-legacy",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"mysql"},
+				},
+				{
+					Name:        "mysql-new",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"mysql"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				func(repo Repo) bool {
+					return repo.Name == "mysql-legacy"
+				},
+			},
+			expected: &Mapping{
+				Image:   "mysql",
+				Results: []string{"mysql", "mysql-new"},
+			},
+		},
+		{
+			name:  "ignore all matching repos with custom function",
+			image: "alpine",
+			repos: []Repo{
+				{
+					Name:        "alpine-dev",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"alpine"},
+				},
+				{
+					Name:        "alpine-test",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"alpine"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				func(repo Repo) bool {
+					return strings.HasPrefix(repo.Name, "alpine-")
+				},
+			},
+			expected: &Mapping{
+				Image:   "alpine",
+				Results: []string{},
+			},
+		},
+		{
+			name:  "combine built-in and custom ignore functions",
+			image: "node",
+			repos: []Repo{
+				{
+					Name:        "node",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "node-fips",
+					CatalogTier: "FIPS",
+					Aliases:     []string{"node"},
+				},
+				{
+					Name:        "experimental-node",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"node"},
+				},
+				{
+					Name:        "node-staging",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"node"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				IgnoreTiers([]string{"fips"}),
+				func(repo Repo) bool {
+					return strings.HasPrefix(repo.Name, "experimental-")
+				},
+			},
+			expected: &Mapping{
+				Image:   "node",
+				Results: []string{"node", "node-staging"},
+			},
+		},
+		{
+			name:  "ignore repos by suffix",
+			image: "python",
+			repos: []Repo{
+				{
+					Name:        "python",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "python-slim",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"python"},
+				},
+				{
+					Name:        "python-alpine",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"python"},
+				},
+			},
+			ignoreFns: []IgnoreFn{
+				func(repo Repo) bool {
+					return strings.HasSuffix(repo.Name, "-alpine")
+				},
+			},
+			expected: &Mapping{
+				Image:   "python",
+				Results: []string{"python", "python-slim"},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := &Mapper{
+				repos:     tc.repos,
+				ignoreFns: tc.ignoreFns,
+			}
+
+			result, err := m.Map(tc.image)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			opts := cmpopts.SortSlices(func(a, b string) bool {
+				return strings.Compare(a, b) < 0
+			})
+
+			if diff := cmp.Diff(tc.expected, result, opts); diff != "" {
+				t.Errorf("mapping mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMapperMapWithCustomIgnoreFnUsingAliases(t *testing.T) {
+	repos := []Repo{
+		{
+			Name:        "web-server",
+			CatalogTier: "APPLICATION",
+			Aliases:     []string{"nginx", "httpd"},
+		},
+		{
+			Name:        "cache-server",
+			CatalogTier: "APPLICATION",
+			Aliases:     []string{"redis", "memcached"},
+		},
+		{
+			Name:        "db-server",
+			CatalogTier: "APPLICATION",
+			Aliases:     []string{"postgres", "mysql"},
+		},
+	}
+
+	// Custom ignore function that checks aliases
+	ignoreFn := func(repo Repo) bool {
+		for _, alias := range repo.Aliases {
+			if alias == "redis" || alias == "memcached" {
+				return true
+			}
+		}
+		return false
+	}
+
+	m := &Mapper{
+		repos:     repos,
+		ignoreFns: []IgnoreFn{ignoreFn},
+	}
+
+	// Should match cache-server but it should be ignored
+	result, err := m.Map("redis")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := &Mapping{
+		Image:   "redis",
+		Results: []string{},
+	}
+
+	if diff := cmp.Diff(expected, result); diff != "" {
+		t.Errorf("mapping mismatch (-want +got):\n%s", diff)
+	}
+
+	// Should match web-server and it should not be ignored
+	result, err = m.Map("nginx")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected = &Mapping{
+		Image:   "nginx",
+		Results: []string{"web-server"},
+	}
+
+	if diff := cmp.Diff(expected, result); diff != "" {
+		t.Errorf("mapping mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestMapperMapWithNoIgnoreFns(t *testing.T) {
+	repos := []Repo{
+		{
+			Name:        "nginx",
+			CatalogTier: "APPLICATION",
+			Aliases:     []string{},
+		},
+		{
+			Name:        "nginx-test",
+			CatalogTier: "APPLICATION",
+			Aliases:     []string{"nginx"},
+		},
+		{
+			Name:        "nginx-dev",
+			CatalogTier: "APPLICATION",
+			Aliases:     []string{"nginx"},
+		},
+	}
+
+	m := &Mapper{
+		repos:     repos,
+		ignoreFns: []IgnoreFn{}, // No ignore functions
+	}
+
+	result, err := m.Map("nginx")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Should get all matching repos when no ignore functions are set
+	expected := &Mapping{
+		Image:   "nginx",
+		Results: []string{"nginx", "nginx-dev", "nginx-test"},
+	}
+
+	opts := cmpopts.SortSlices(func(a, b string) bool {
+		return strings.Compare(a, b) < 0
+	})
+
+	if diff := cmp.Diff(expected, result, opts); diff != "" {
+		t.Errorf("mapping mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func TestMapperIntegration(t *testing.T) {
@@ -294,6 +650,8 @@ func TestMapperIntegration(t *testing.T) {
 		"ghcr.io/cloudnative-pg/pgbouncer:1.23.0": {
 			"pgbouncer",
 			"pgbouncer-fips",
+			"pgbouncer-iamguarded",
+			"pgbouncer-iamguarded-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-cloudformation:v1.20.1": {
 			"crossplane-aws-cloudformation",
@@ -401,6 +759,7 @@ func TestMapperIntegration(t *testing.T) {
 		},
 		"influxdb:2.7.4-alpine": {
 			"influxdb",
+			"influxdb-iamguarded",
 		},
 		"oliver006/redis_exporter:v1.45.0-alpine": {
 			"prometheus-redis-exporter",
@@ -419,6 +778,8 @@ func TestMapperIntegration(t *testing.T) {
 		"percona/haproxy:2.8.5": {
 			"haproxy",
 			"haproxy-fips",
+			"haproxy-iamguarded",
+			"haproxy-iamguarded-fips",
 		},
 		"prom/mysqld-exporter:v0.16.0": {
 			"prometheus-mysqld-exporter",
@@ -430,6 +791,8 @@ func TestMapperIntegration(t *testing.T) {
 		"quay.io/argoproj/argocd:v3.2.1": {
 			"argocd",
 			"argocd-fips",
+			"argocd-iamguarded",
+			"argocd-iamguarded-fips",
 			"argocd-repo-server",
 			"argocd-repo-server-fips",
 		},
@@ -492,6 +855,8 @@ func TestMapperIntegration(t *testing.T) {
 		"quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z": {
 			"minio",
 			"minio-fips",
+			"minio-iamguarded",
+			"minio-iamguarded-fips",
 		},
 		"quay.io/minio/operator:v6.0.4": {
 			"minio-operator",
@@ -512,6 +877,8 @@ func TestMapperIntegration(t *testing.T) {
 		"quay.io/prometheus/pushgateway:v1.9.0": {
 			"prometheus-pushgateway",
 			"prometheus-pushgateway-fips",
+			"prometheus-pushgateway-iamguarded",
+			"prometheus-pushgateway-iamguarded-fips",
 		},
 		"registry.k8s.io/sig-storage/csi-attacher:v4.6.1": {
 			"kubernetes-csi-external-attacher",
@@ -544,6 +911,8 @@ func TestMapperIntegration(t *testing.T) {
 		"valkey/valkey:7.2.5-alpine": {
 			"valkey",
 			"valkey-fips",
+			"valkey-iamguarded",
+			"valkey-iamguarded-fips",
 		},
 	}
 

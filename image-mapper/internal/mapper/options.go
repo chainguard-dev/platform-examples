@@ -1,22 +1,16 @@
 package mapper
 
-import "strings"
-
 // Option configures a Mapper
 type Option func(*options)
 
 type options struct {
-	ignoreTiers []string
+	ignoreFns []IgnoreFn
 }
 
-// WithoutTiers is a functional option that configures a Mapper to ignore
-// Chainguard images of specific tiers
-func WithoutTiers(tiers []string) Option {
-	var ignoreTiers []string
-	for _, tier := range tiers {
-		ignoreTiers = append(ignoreTiers, strings.ToLower(tier))
-	}
+// WithIgnoreFns is a functional option that configures the IgnoreFns used by
+// the mapper
+func WithIgnoreFns(ignoreFns ...IgnoreFn) Option {
 	return func(o *options) {
-		o.ignoreTiers = ignoreTiers
+		o.ignoreFns = ignoreFns
 	}
 }
