@@ -28,6 +28,7 @@ type MatchFn func(ref name.Reference, repo Repo) bool
 var matchFns = []MatchFn{
 	matchBasename,
 	matchDashname,
+	matchIamguarded,
 	matchAliases,
 }
 
@@ -58,6 +59,20 @@ func matchDashname(ref name.Reference, repo Repo) bool {
 	}
 
 	return false
+}
+
+// matchIamguarded matches Chainguard images that match the name of the upstream
+// repository, with 'iamguarded' appended. This identifies iamguarded
+// equivalents for upstream images.
+func matchIamguarded(ref name.Reference, repo Repo) bool {
+	withIamguarded := fmt.Sprintf("%s-iamguarded", ref.Context().String())
+
+	iamguardedRef, err := name.ParseReference(withIamguarded)
+	if err != nil {
+		return false
+	}
+
+	return matchBasename(iamguardedRef, repo) || matchDashname(iamguardedRef, repo)
 }
 
 // matchAliases uses the Chainguard repository's aliases to match against the

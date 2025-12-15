@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	outputFormat string
-	ignoreTiers  []string
+	outputFormat     string
+	ignoreTiers      []string
+	ignoreIamguarded bool
 )
 
 var rootCmd = &cobra.Command{
@@ -26,11 +27,14 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("constructing output: %w", err)
 		}
 
-		var opts []mapper.Option
+		var ignoreFns []mapper.IgnoreFn
 		if len(ignoreTiers) > 0 {
-			opts = append(opts, mapper.WithoutTiers(ignoreTiers))
+			ignoreFns = append(ignoreFns, mapper.IgnoreTiers(ignoreTiers))
 		}
-		m, err := mapper.NewMapper(ctx, opts...)
+		if ignoreIamguarded {
+			ignoreFns = append(ignoreFns, mapper.IgnoreIamguarded())
+		}
+		m, err := mapper.NewMapper(ctx, mapper.WithIgnoreFns(ignoreFns...))
 		if err != nil {
 			return fmt.Errorf("creating mapper: %w", err)
 		}
@@ -52,6 +56,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.Flags().StringVarP(&outputFormat, "output", "o", "text", "Output format (csv, json, text, customer-yaml)")
 	rootCmd.Flags().StringSliceVar(&ignoreTiers, "ignore-tiers", []string{}, "Ignore Chainguard repos of specific tiers (PREMIUM, APPLICATION, BASE, FIPS, AI)")
+	rootCmd.Flags().BoolVar(&ignoreIamguarded, "ignore-iamguarded", false, "Ignore iamguarded images")
 }
 
 func Execute() error {

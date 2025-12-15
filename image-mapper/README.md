@@ -49,7 +49,7 @@ $ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 registry.k8s.io/sig-storage/li
 ```
 
 ```
-$ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 bitnami/postgresql -o csv
+$ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 registry.k8s.io/sig-storage/livenessprobe:v2.13.1 -o csv
 ghcr.io/stakater/reloader:v1.4.1,[stakater-reloader stakater-reloader-fips]
 registry.k8s.io/sig-storage/livenessprobe:v2.13.1,[kubernetes-csi-livenessprobe]
 ```
@@ -59,11 +59,25 @@ the `--ignore-tiers` flag.
 
 ```
 $ ./image-mapper prom/prometheus
-prom/prometheus -> prometheus-fips
 prom/prometheus -> prometheus
+prom/prometheus -> prometheus-fips
+prom/prometheus -> prometheus-iamguarded
+prom/prometheus -> prometheus-iamguarded-fips
 
 $ ./image-mapper prom/prometheus --ignore-tiers=FIPS
 prom/prometheus -> prometheus
+prom/prometheus -> prometheus-iamguarded
+```
+
+The mapper will also return matches for our `-iamguarded` images. These images
+are designed specifically to work with Chainguard's Helm charts. If you aren't
+interested in using our charts, you can exclude those matches with
+`--ignore-iamguarded`.
+
+```
+$ ./image-mapper prom/prometheus --ignore-iamguarded
+prom/prometheus -> prometheus
+prom/prometheus -> prometheus-fips
 ```
 
 ## Docker
