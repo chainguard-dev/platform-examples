@@ -29,7 +29,7 @@ func TestMapperMap(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "nginx",
-				Results: []string{"nginx"},
+				Results: []string{"cgr.dev/chainguard/nginx"},
 			},
 		},
 		{
@@ -64,7 +64,7 @@ func TestMapperMap(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "nginx",
-				Results: []string{"nginx", "nginx-custom"},
+				Results: []string{"cgr.dev/chainguard/nginx", "cgr.dev/chainguard/nginx-custom"},
 			},
 		},
 		{
@@ -84,7 +84,7 @@ func TestMapperMap(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "nginx",
-				Results: []string{"nginx"},
+				Results: []string{"cgr.dev/chainguard/nginx"},
 			},
 		},
 	}
@@ -93,6 +93,7 @@ func TestMapperMap(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := &Mapper{
 				repos:     tc.repos,
+				repoName:  "cgr.dev/chainguard",
 				ignoreFns: []IgnoreFn{IgnoreTiers([]string{"fips"})},
 			}
 
@@ -139,7 +140,8 @@ func TestMapperMapAll(t *testing.T) {
 	}
 
 	m := &Mapper{
-		repos: repos,
+		repos:    repos,
+		repoName: "cgr.dev/chainguard",
 	}
 
 	images := []string{"nginx", "redis", "postgres"}
@@ -153,11 +155,11 @@ func TestMapperMapAll(t *testing.T) {
 	expected := []*Mapping{
 		{
 			Image:   "nginx",
-			Results: []string{"nginx"},
+			Results: []string{"cgr.dev/chainguard/nginx"},
 		},
 		{
 			Image:   "redis",
-			Results: []string{"redis"},
+			Results: []string{"cgr.dev/chainguard/redis"},
 		},
 		{
 			Image:   "postgres",
@@ -185,7 +187,8 @@ func TestMapperMapAllDuplicates(t *testing.T) {
 	}
 
 	m := &Mapper{
-		repos: repos,
+		repos:    repos,
+		repoName: "cgr.dev/chainguard",
 	}
 
 	// Include duplicates in the input
@@ -201,7 +204,7 @@ func TestMapperMapAllDuplicates(t *testing.T) {
 	expected := []*Mapping{
 		{
 			Image:   "nginx",
-			Results: []string{"nginx"},
+			Results: []string{"cgr.dev/chainguard/nginx"},
 		},
 		{
 			Image:   "redis",
@@ -295,7 +298,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "nginx",
-				Results: []string{"nginx", "prod-nginx"},
+				Results: []string{"cgr.dev/chainguard/nginx", "cgr.dev/chainguard/prod-nginx"},
 			},
 		},
 		{
@@ -325,7 +328,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "redis",
-				Results: []string{"redis", "redis-prod"},
+				Results: []string{"cgr.dev/chainguard/redis", "cgr.dev/chainguard/redis-prod"},
 			},
 		},
 		{
@@ -363,7 +366,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "postgres",
-				Results: []string{"postgres", "postgres-prod"},
+				Results: []string{"cgr.dev/chainguard/postgres", "cgr.dev/chainguard/postgres-prod"},
 			},
 		},
 		{
@@ -393,7 +396,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "mysql",
-				Results: []string{"mysql", "mysql-new"},
+				Results: []string{"cgr.dev/chainguard/mysql", "cgr.dev/chainguard/mysql-new"},
 			},
 		},
 		{
@@ -454,7 +457,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "node",
-				Results: []string{"node", "node-staging"},
+				Results: []string{"cgr.dev/chainguard/node", "cgr.dev/chainguard/node-staging"},
 			},
 		},
 		{
@@ -484,7 +487,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 			},
 			expected: &Mapping{
 				Image:   "python",
-				Results: []string{"python", "python-slim"},
+				Results: []string{"cgr.dev/chainguard/python", "cgr.dev/chainguard/python-slim"},
 			},
 		},
 	}
@@ -493,6 +496,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := &Mapper{
 				repos:     tc.repos,
+				repoName:  "cgr.dev/chainguard",
 				ignoreFns: tc.ignoreFns,
 			}
 
@@ -543,6 +547,7 @@ func TestMapperMapWithCustomIgnoreFnUsingAliases(t *testing.T) {
 
 	m := &Mapper{
 		repos:     repos,
+		repoName:  "cgr.dev/chainguard",
 		ignoreFns: []IgnoreFn{ignoreFn},
 	}
 
@@ -569,7 +574,7 @@ func TestMapperMapWithCustomIgnoreFnUsingAliases(t *testing.T) {
 
 	expected = &Mapping{
 		Image:   "nginx",
-		Results: []string{"web-server"},
+		Results: []string{"cgr.dev/chainguard/web-server"},
 	}
 
 	if diff := cmp.Diff(expected, result); diff != "" {
@@ -598,6 +603,7 @@ func TestMapperMapWithNoIgnoreFns(t *testing.T) {
 
 	m := &Mapper{
 		repos:     repos,
+		repoName:  "cgr.dev/chainguard",
 		ignoreFns: []IgnoreFn{}, // No ignore functions
 	}
 
@@ -609,7 +615,7 @@ func TestMapperMapWithNoIgnoreFns(t *testing.T) {
 	// Should get all matching repos when no ignore functions are set
 	expected := &Mapping{
 		Image:   "nginx",
-		Results: []string{"nginx", "nginx-dev", "nginx-test"},
+		Results: []string{"cgr.dev/chainguard/nginx", "cgr.dev/chainguard/nginx-dev", "cgr.dev/chainguard/nginx-test"},
 	}
 
 	opts := cmpopts.SortSlices(func(a, b string) bool {
@@ -628,291 +634,291 @@ func TestMapperIntegration(t *testing.T) {
 
 	testCases := map[string][]string{
 		"atmoz/sftp:alpine": {
-			"atmoz-sftp",
-			"atmoz-sftp-fips",
+			"cgr.dev/chainguard/atmoz-sftp",
+			"cgr.dev/chainguard/atmoz-sftp-fips",
 		},
 		"busybox:1.35.0": {
-			"busybox",
-			"busybox-fips",
+			"cgr.dev/chainguard/busybox",
+			"cgr.dev/chainguard/busybox-fips",
 		},
 		"coredns/coredns:1.11.3": {
-			"coredns",
-			"coredns-fips",
+			"cgr.dev/chainguard/coredns",
+			"cgr.dev/chainguard/coredns-fips",
 		},
 		"curlimages/curl:7.85.0": {
-			"curl",
-			"curl-fips",
+			"cgr.dev/chainguard/curl",
+			"cgr.dev/chainguard/curl-fips",
 		},
 		"ghcr.io/cloudnative-pg/cloudnative-pg:v1.24.4": {
-			"cloudnative-pg",
-			"cloudnative-pg-fips",
+			"cgr.dev/chainguard/cloudnative-pg",
+			"cgr.dev/chainguard/cloudnative-pg-fips",
 		},
 		"ghcr.io/cloudnative-pg/pgbouncer:1.23.0": {
-			"pgbouncer",
-			"pgbouncer-fips",
-			"pgbouncer-iamguarded",
-			"pgbouncer-iamguarded-fips",
+			"cgr.dev/chainguard/pgbouncer",
+			"cgr.dev/chainguard/pgbouncer-fips",
+			"cgr.dev/chainguard/pgbouncer-iamguarded",
+			"cgr.dev/chainguard/pgbouncer-iamguarded-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-cloudformation:v1.20.1": {
-			"crossplane-aws-cloudformation",
-			"crossplane-aws-cloudformation-fips",
+			"cgr.dev/chainguard/crossplane-aws-cloudformation",
+			"cgr.dev/chainguard/crossplane-aws-cloudformation-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-cloudfront:v1.20.1": {
-			"crossplane-aws-cloudfront",
-			"crossplane-aws-cloudfront-fips",
+			"cgr.dev/chainguard/crossplane-aws-cloudfront",
+			"cgr.dev/chainguard/crossplane-aws-cloudfront-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-dynamodb:v1.20.1": {
-			"crossplane-aws-dynamodb",
-			"crossplane-aws-dynamodb-fips",
+			"cgr.dev/chainguard/crossplane-aws-dynamodb",
+			"cgr.dev/chainguard/crossplane-aws-dynamodb-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-ec2:v1.20.1": {
-			"crossplane-aws-ec2",
-			"crossplane-aws-ec2-fips",
+			"cgr.dev/chainguard/crossplane-aws-ec2",
+			"cgr.dev/chainguard/crossplane-aws-ec2-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-eks:v1.20.1": {
-			"crossplane-aws-eks",
-			"crossplane-aws-eks-fips",
+			"cgr.dev/chainguard/crossplane-aws-eks",
+			"cgr.dev/chainguard/crossplane-aws-eks-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-firehose:v1.20.1": {
-			"crossplane-aws-firehose",
-			"crossplane-aws-firehose-fips",
+			"cgr.dev/chainguard/crossplane-aws-firehose",
+			"cgr.dev/chainguard/crossplane-aws-firehose-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-iam:v1.20.1": {
-			"crossplane-aws-iam",
-			"crossplane-aws-iam-fips",
+			"cgr.dev/chainguard/crossplane-aws-iam",
+			"cgr.dev/chainguard/crossplane-aws-iam-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-kinesis:v1.20.1": {
-			"crossplane-aws-kinesis",
-			"crossplane-aws-kinesis-fips",
+			"cgr.dev/chainguard/crossplane-aws-kinesis",
+			"cgr.dev/chainguard/crossplane-aws-kinesis-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-kms:v1.20.1": {
-			"crossplane-aws-kms",
-			"crossplane-aws-kms-fips",
+			"cgr.dev/chainguard/crossplane-aws-kms",
+			"cgr.dev/chainguard/crossplane-aws-kms-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-lambda:v1.20.1": {
-			"crossplane-aws-lambda",
-			"crossplane-aws-lambda-fips",
+			"cgr.dev/chainguard/crossplane-aws-lambda",
+			"cgr.dev/chainguard/crossplane-aws-lambda-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-rds:v1.20.1": {
-			"crossplane-aws-rds",
-			"crossplane-aws-rds-fips",
+			"cgr.dev/chainguard/crossplane-aws-rds",
+			"cgr.dev/chainguard/crossplane-aws-rds-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-route53:v1.20.1": {
-			"crossplane-aws-route53",
-			"crossplane-aws-route53-fips",
+			"cgr.dev/chainguard/crossplane-aws-route53",
+			"cgr.dev/chainguard/crossplane-aws-route53-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-s3:v1.20.1": {
-			"crossplane-aws-s3",
-			"crossplane-aws-s3-fips",
+			"cgr.dev/chainguard/crossplane-aws-s3",
+			"cgr.dev/chainguard/crossplane-aws-s3-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-sns:v1.20.1": {
-			"crossplane-aws-sns",
-			"crossplane-aws-sns-fips",
+			"cgr.dev/chainguard/crossplane-aws-sns",
+			"cgr.dev/chainguard/crossplane-aws-sns-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-sqs:v1.20.1": {
-			"crossplane-aws-sqs",
-			"crossplane-aws-sqs-fips",
+			"cgr.dev/chainguard/crossplane-aws-sqs",
+			"cgr.dev/chainguard/crossplane-aws-sqs-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-family-aws:v1.21.1": {
-			"crossplane-aws",
-			"crossplane-aws-fips",
+			"cgr.dev/chainguard/crossplane-aws",
+			"cgr.dev/chainguard/crossplane-aws-fips",
 		},
 		"ghcr.io/fluxcd/flux-cli:v2.7.5": {
-			"flux",
-			"flux-fips",
+			"cgr.dev/chainguard/flux",
+			"cgr.dev/chainguard/flux-fips",
 		},
 		"ghcr.io/fluxcd/helm-controller:v1.4.5": {
-			"flux-helm-controller",
-			"flux-helm-controller-fips",
+			"cgr.dev/chainguard/flux-helm-controller",
+			"cgr.dev/chainguard/flux-helm-controller-fips",
 		},
 		"ghcr.io/fluxcd/image-automation-controller:v1.0.4": {
-			"flux-image-automation-controller",
-			"flux-image-automation-controller-fips",
+			"cgr.dev/chainguard/flux-image-automation-controller",
+			"cgr.dev/chainguard/flux-image-automation-controller-fips",
 		},
 		"ghcr.io/fluxcd/image-reflector-controller:v1.0.4": {
-			"flux-image-reflector-controller",
-			"flux-image-reflector-controller-fips",
+			"cgr.dev/chainguard/flux-image-reflector-controller",
+			"cgr.dev/chainguard/flux-image-reflector-controller-fips",
 		},
 		"ghcr.io/fluxcd/kustomize-controller:v1.7.3": {
-			"flux-kustomize-controller",
-			"flux-kustomize-controller-fips",
+			"cgr.dev/chainguard/flux-kustomize-controller",
+			"cgr.dev/chainguard/flux-kustomize-controller-fips",
 		},
 		"ghcr.io/fluxcd/notification-controller:v1.7.5": {
-			"flux-notification-controller",
-			"flux-notification-controller-fips",
+			"cgr.dev/chainguard/flux-notification-controller",
+			"cgr.dev/chainguard/flux-notification-controller-fips",
 		},
 		"ghcr.io/fluxcd/source-controller:v1.7.4": {
-			"flux-source-controller",
-			"flux-source-controller-fips",
+			"cgr.dev/chainguard/flux-source-controller",
+			"cgr.dev/chainguard/flux-source-controller-fips",
 		},
 		"hashicorp/vault-csi-provider:1.4.0": {
-			"vault-csi-provider",
-			"vault-csi-provider-fips",
+			"cgr.dev/chainguard/vault-csi-provider",
+			"cgr.dev/chainguard/vault-csi-provider-fips",
 		},
 		"hashicorp/vault:1.14.0": {
-			"vault",
-			"vault-fips",
+			"cgr.dev/chainguard/vault",
+			"cgr.dev/chainguard/vault-fips",
 		},
 		"hashicorp/vault-k8s:1.14.0": {
-			"vault-k8s",
-			"vault-k8s-fips",
+			"cgr.dev/chainguard/vault-k8s",
+			"cgr.dev/chainguard/vault-k8s-fips",
 		},
 		"influxdb:2.7.4-alpine": {
-			"influxdb",
-			"influxdb-iamguarded",
+			"cgr.dev/chainguard/influxdb",
+			"cgr.dev/chainguard/influxdb-iamguarded",
 		},
 		"oliver006/redis_exporter:v1.45.0-alpine": {
-			"prometheus-redis-exporter",
-			"prometheus-redis-exporter-fips",
+			"cgr.dev/chainguard/prometheus-redis-exporter",
+			"cgr.dev/chainguard/prometheus-redis-exporter-fips",
 		},
 		"opensearchproject/opensearch-dashboards:2.19.1": {
-			"opensearch-dashboards",
-			"opensearch-dashboards-fips",
+			"cgr.dev/chainguard/opensearch-dashboards",
+			"cgr.dev/chainguard/opensearch-dashboards-fips",
 		},
 		"opensearchproject/opensearch-operator:2.7.0": {
-			"opensearch-k8s-operator",
+			"cgr.dev/chainguard/opensearch-k8s-operator",
 		},
 		"opensearchproject/opensearch:2.19.1": {
-			"opensearch",
+			"cgr.dev/chainguard/opensearch",
 		},
 		"percona/haproxy:2.8.5": {
-			"haproxy",
-			"haproxy-fips",
-			"haproxy-iamguarded",
-			"haproxy-iamguarded-fips",
+			"cgr.dev/chainguard/haproxy",
+			"cgr.dev/chainguard/haproxy-fips",
+			"cgr.dev/chainguard/haproxy-iamguarded",
+			"cgr.dev/chainguard/haproxy-iamguarded-fips",
 		},
 		"prom/mysqld-exporter:v0.16.0": {
-			"prometheus-mysqld-exporter",
+			"cgr.dev/chainguard/prometheus-mysqld-exporter",
 		},
 		"prom/statsd-exporter:v0.26.1": {
-			"prometheus-statsd-exporter",
-			"prometheus-statsd-exporter-fips",
+			"cgr.dev/chainguard/prometheus-statsd-exporter",
+			"cgr.dev/chainguard/prometheus-statsd-exporter-fips",
 		},
 		"quay.io/argoproj/argocd:v3.2.1": {
-			"argocd",
-			"argocd-fips",
-			"argocd-iamguarded",
-			"argocd-iamguarded-fips",
-			"argocd-repo-server",
-			"argocd-repo-server-fips",
+			"cgr.dev/chainguard/argocd",
+			"cgr.dev/chainguard/argocd-fips",
+			"cgr.dev/chainguard/argocd-iamguarded",
+			"cgr.dev/chainguard/argocd-iamguarded-fips",
+			"cgr.dev/chainguard/argocd-repo-server",
+			"cgr.dev/chainguard/argocd-repo-server-fips",
 		},
 		"quay.io/argoproj/argocli:latest": {
-			"argo-cli",
-			"argo-cli-fips",
+			"cgr.dev/chainguard/argo-cli",
+			"cgr.dev/chainguard/argo-cli-fips",
 		},
 		"quay.io/argoproj/argoexec:latest": {
-			"argo-exec",
-			"argo-exec-fips",
+			"cgr.dev/chainguard/argo-exec",
+			"cgr.dev/chainguard/argo-exec-fips",
 		},
 		"quay.io/argoproj/argo-events:latest": {
-			"argo-events",
-			"argo-events-fips",
+			"cgr.dev/chainguard/argo-events",
+			"cgr.dev/chainguard/argo-events-fips",
 		},
 		"quay.io/argoproj/workflow-controller:latest": {
-			"argo-workflowcontroller",
-			"argo-workflowcontroller-fips",
+			"cgr.dev/chainguard/argo-workflowcontroller",
+			"cgr.dev/chainguard/argo-workflowcontroller-fips",
 		},
 		"quay.io/jetstack/cert-manager-acmesolver:v1.15.2": {
-			"cert-manager-acmesolver",
-			"cert-manager-acmesolver-fips",
-			"cert-manager-acmesolver-iamguarded",
-			"cert-manager-acmesolver-iamguarded-fips",
+			"cgr.dev/chainguard/cert-manager-acmesolver",
+			"cgr.dev/chainguard/cert-manager-acmesolver-fips",
+			"cgr.dev/chainguard/cert-manager-acmesolver-iamguarded",
+			"cgr.dev/chainguard/cert-manager-acmesolver-iamguarded-fips",
 		},
 		"quay.io/jetstack/cert-manager-cainjector:v1.15.2": {
-			"cert-manager-cainjector",
-			"cert-manager-cainjector-fips",
-			"cert-manager-cainjector-iamguarded",
-			"cert-manager-cainjector-iamguarded-fips",
+			"cgr.dev/chainguard/cert-manager-cainjector",
+			"cgr.dev/chainguard/cert-manager-cainjector-fips",
+			"cgr.dev/chainguard/cert-manager-cainjector-iamguarded",
+			"cgr.dev/chainguard/cert-manager-cainjector-iamguarded-fips",
 		},
 		"quay.io/jetstack/cert-manager-controller:v1.15.2": {
-			"cert-manager-controller",
-			"cert-manager-controller-fips",
-			"cert-manager-controller-iamguarded",
-			"cert-manager-controller-iamguarded-fips",
+			"cgr.dev/chainguard/cert-manager-controller",
+			"cgr.dev/chainguard/cert-manager-controller-fips",
+			"cgr.dev/chainguard/cert-manager-controller-iamguarded",
+			"cgr.dev/chainguard/cert-manager-controller-iamguarded-fips",
 		},
 		"quay.io/jetstack/cert-manager-startupapicheck:v1.15.2": {
-			"cert-manager-startupapicheck",
-			"cert-manager-startupapicheck-fips",
+			"cgr.dev/chainguard/cert-manager-startupapicheck",
+			"cgr.dev/chainguard/cert-manager-startupapicheck-fips",
 		},
 		"quay.io/jetstack/cert-manager-webhook:v1.15.2": {
-			"cert-manager-webhook",
-			"cert-manager-webhook-fips",
-			"cert-manager-webhook-iamguarded",
-			"cert-manager-webhook-iamguarded-fips",
+			"cgr.dev/chainguard/cert-manager-webhook",
+			"cgr.dev/chainguard/cert-manager-webhook-fips",
+			"cgr.dev/chainguard/cert-manager-webhook-iamguarded",
+			"cgr.dev/chainguard/cert-manager-webhook-iamguarded-fips",
 		},
 		"quay.io/jetstack/cmctl:v2.4.0": {
-			"cert-manager-cmctl",
-			"cert-manager-cmctl-fips",
+			"cgr.dev/chainguard/cert-manager-cmctl",
+			"cgr.dev/chainguard/cert-manager-cmctl-fips",
 		},
 		"quay.io/jetstack/trust-manager:v0.12.0": {
-			"trust-manager",
-			"trust-manager-fips",
+			"cgr.dev/chainguard/trust-manager",
+			"cgr.dev/chainguard/trust-manager-fips",
 		},
 		"quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z-cpuv1": {
-			"minio-client",
-			"minio-client-fips",
+			"cgr.dev/chainguard/minio-client",
+			"cgr.dev/chainguard/minio-client-fips",
 		},
 		"quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z": {
-			"minio",
-			"minio-fips",
-			"minio-iamguarded",
-			"minio-iamguarded-fips",
+			"cgr.dev/chainguard/minio",
+			"cgr.dev/chainguard/minio-fips",
+			"cgr.dev/chainguard/minio-iamguarded",
+			"cgr.dev/chainguard/minio-iamguarded-fips",
 		},
 		"quay.io/minio/operator:v6.0.4": {
-			"minio-operator",
-			"minio-operator-fips",
+			"cgr.dev/chainguard/minio-operator",
+			"cgr.dev/chainguard/minio-operator-fips",
 		},
 		"quay.io/minio/operator-sidecar:v6.0.4": {
-			"minio-operator-sidecar",
-			"minio-operator-sidecar-fips",
+			"cgr.dev/chainguard/minio-operator-sidecar",
+			"cgr.dev/chainguard/minio-operator-sidecar-fips",
 		},
 		"quay.io/mongodb/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.9": {
-			"mongodb-kubernetes-operator-version-upgrade-post-start-hook",
-			"mongodb-kubernetes-operator-version-upgrade-post-start-hook-fips",
+			"cgr.dev/chainguard/mongodb-kubernetes-operator-version-upgrade-post-start-hook",
+			"cgr.dev/chainguard/mongodb-kubernetes-operator-version-upgrade-post-start-hook-fips",
 		},
 		"quay.io/mongodb/mongodb-kubernetes-operator:0.12.0": {
-			"mongodb-kubernetes-operator",
-			"mongodb-kubernetes-operator-fips",
+			"cgr.dev/chainguard/mongodb-kubernetes-operator",
+			"cgr.dev/chainguard/mongodb-kubernetes-operator-fips",
 		},
 		"quay.io/prometheus/pushgateway:v1.9.0": {
-			"prometheus-pushgateway",
-			"prometheus-pushgateway-fips",
-			"prometheus-pushgateway-iamguarded",
-			"prometheus-pushgateway-iamguarded-fips",
+			"cgr.dev/chainguard/prometheus-pushgateway",
+			"cgr.dev/chainguard/prometheus-pushgateway-fips",
+			"cgr.dev/chainguard/prometheus-pushgateway-iamguarded",
+			"cgr.dev/chainguard/prometheus-pushgateway-iamguarded-fips",
 		},
 		"registry.k8s.io/sig-storage/csi-attacher:v4.6.1": {
-			"kubernetes-csi-external-attacher",
+			"cgr.dev/chainguard/kubernetes-csi-external-attacher",
 		},
 		"registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.11.1": {
-			"kubernetes-csi-node-driver-registrar",
+			"cgr.dev/chainguard/kubernetes-csi-node-driver-registrar",
 		},
 		"registry.k8s.io/sig-storage/livenessprobe:v2.13.1": {
-			"kubernetes-csi-livenessprobe",
+			"cgr.dev/chainguard/kubernetes-csi-livenessprobe",
 		},
 		"registry.k8s.io/sig-storage/nfsplugin:v4.8.0": {
-			"kubernetes-csi-driver-nfs",
+			"cgr.dev/chainguard/kubernetes-csi-driver-nfs",
 		},
 		"registry.k8s.io/sig-storage/snapshot-controller:v8.0.1": {
-			"kubernetes-csi-external-snapshot-controller",
-			"kubernetes-csi-external-snapshotter",
+			"cgr.dev/chainguard/kubernetes-csi-external-snapshot-controller",
+			"cgr.dev/chainguard/kubernetes-csi-external-snapshotter",
 		},
 		"thingsboard/tb-js-executor:3.9.1": {
-			"thingsboard-tb-js-executor",
+			"cgr.dev/chainguard/thingsboard-tb-js-executor",
 		},
 		"thingsboard/tb-mqtt-transport:3.5.1": {
-			"thingsboard-tb-mqtt-transport",
+			"cgr.dev/chainguard/thingsboard-tb-mqtt-transport",
 		},
 		"thingsboard/tb-node:3.5.1": {
-			"thingsboard-tb-node",
+			"cgr.dev/chainguard/thingsboard-tb-node",
 		},
 		"thingsboard/tb-web-ui:3.5.1": {
-			"thingsboard-tb-web-ui",
+			"cgr.dev/chainguard/thingsboard-tb-web-ui",
 		},
 		"valkey/valkey:7.2.5-alpine": {
-			"valkey",
-			"valkey-fips",
-			"valkey-iamguarded",
-			"valkey-iamguarded-fips",
+			"cgr.dev/chainguard/valkey",
+			"cgr.dev/chainguard/valkey-fips",
+			"cgr.dev/chainguard/valkey-iamguarded",
+			"cgr.dev/chainguard/valkey-iamguarded-fips",
 		},
 	}
 
@@ -920,6 +926,14 @@ func TestMapperIntegration(t *testing.T) {
 	m, err := NewMapper(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error creating mapper: %s", err)
+	}
+
+	// stripTag removes the tag portion from an image reference
+	stripTag := func(img string) string {
+		if idx := strings.Index(img, ":"); idx != -1 {
+			return img[:idx]
+		}
+		return img
 	}
 
 	for img, wantResults := range testCases {
@@ -933,7 +947,19 @@ func TestMapperIntegration(t *testing.T) {
 				Image:   img,
 				Results: wantResults,
 			}
-			if diff := cmp.Diff(want, got); diff != "" {
+
+			// Compare image references without tags since tags are dynamic
+			// Sort based on the stripped image names (without tags)
+			opts := cmp.Options{
+				cmpopts.AcyclicTransformer("StripTags", func(s string) string {
+					return stripTag(s)
+				}),
+				cmpopts.SortSlices(func(a, b string) bool {
+					return strings.Compare(stripTag(a), stripTag(b)) < 0
+				}),
+			}
+
+			if diff := cmp.Diff(want, got, opts); diff != "" {
 				t.Errorf("unexpected mapping for %s:\n%s", img, diff)
 			}
 		})
