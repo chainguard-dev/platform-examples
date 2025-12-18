@@ -13,12 +13,13 @@ type Repo struct {
 	Name        string   `json:"name"`
 	CatalogTier string   `json:"catalogTier"`
 	Aliases     []string `json:"aliases"`
+	ActiveTags  []string `json:"activeTags"`
 }
 
 func listRepos(ctx context.Context) ([]Repo, error) {
 	c := &http.Client{}
 
-	buf := bytes.NewReader([]byte(`{"query":"query OrganizationImageCatalog($organization: ID!) {\n  repos(filter: {uidp: {childrenOf: $organization}}) {\n    name\n    aliases\n  catalogTier\n  }\n}","variables":{"excludeDates":true,"excludeEpochs":true,"organization":"ce2d1984a010471142503340d670612d63ffb9f6"}}`))
+	buf := bytes.NewReader([]byte(`{"query":"query OrganizationImageCatalog($organization: ID!) {\n  repos(filter: {uidp: {childrenOf: $organization}}) {\n    name\n    aliases\n  catalogTier\n  activeTags\n  }\n}","variables":{"excludeDates":true,"excludeEpochs":true,"organization":"ce2d1984a010471142503340d670612d63ffb9f6"}}`))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://data.chainguard.dev/query?id=PrivateImageCatalog", buf)
 	if err != nil {
 		return nil, fmt.Errorf("constructing request: %w", err)

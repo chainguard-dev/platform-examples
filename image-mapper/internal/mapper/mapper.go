@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
 )
@@ -18,6 +19,7 @@ type Mapping struct {
 type Mapper struct {
 	repos     []Repo
 	ignoreFns []IgnoreFn
+	repoName  string
 }
 
 // NewMapper creates a new mapper
@@ -35,6 +37,7 @@ func NewMapper(ctx context.Context, opts ...Option) (*Mapper, error) {
 	m := &Mapper{
 		repos:     repos,
 		ignoreFns: o.ignoreFns,
+		repoName:  "cgr.dev/chainguard",
 	}
 
 	return m, nil
@@ -71,12 +74,14 @@ func (m *Mapper) MapAll(it Iterator) ([]*Mapping, error) {
 
 // Map an upstream image to the corresponding images in chainguard-private
 func (m *Mapper) Map(image string) (*Mapping, error) {
-	ref, err := name.ParseReference(image)
+	ref, err := name.NewTag(strings.Split(image, "@")[0])
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", image, err)
 	}
 
-	matches := map[string]struct{}{}
+	// Identify repositories in the Chainguard catalog that match the
+	// provided image
+	matches := map[string]Repo{}
 	for _, cgrrepo := range m.repos {
 		// There are some images that may appear in the results but are
 		// not accessible in the catalog. We can exclude them by
@@ -92,12 +97,22 @@ func (m *Mapper) Map(image string) (*Mapping, error) {
 		if !Match(ref, cgrrepo) {
 			continue
 		}
-		matches[cgrrepo.Name] = struct{}{}
+		matches[cgrrepo.Name] = cgrrepo
 	}
 
+	// Format the matches into the results we'll include in the mappings
+
 	results := []string{}
-	for match := range matches {
-		results = append(results, match)
+	for _, cgrrepo := range matches {
+		// Append the repository name to the rest of the reference
+		result := fmt.Sprintf("%s/%s", m.repoName, cgrrepo.Name)
+
+		// Try and match the provided tag to one of the active tags
+		tag := MatchTag(cgrrepo.ActiveTags, ref.TagStr())
+		if tag != "" {
+			result = fmt.Sprintf("%s:%s", result, tag)
+		}
+		results = append(results, result)
 	}
 	slices.Sort(results)
 

@@ -1,6 +1,6 @@
 # image-mapper
 
-An example of matching non-Chainguard images to their Chainguard equivalents.
+A tool for matching non-Chainguard images to their Chainguard equivalents.
 
 ## Usage
 
@@ -14,17 +14,25 @@ Then, provide the images to map on the command line.
 
 ```
 $ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 registry.k8s.io/sig-storage/livenessprobe:v2.13.1
-ghcr.io/stakater/reloader:v1.4.1 -> stakater-reloader
-ghcr.io/stakater/reloader:v1.4.1 -> stakater-reloader-fips
-registry.k8s.io/sig-storage/livenessprobe:v2.13.1 -> kubernetes-csi-livenessprobe
+ghcr.io/stakater/reloader:v1.4.1 -> cgr.dev/chainguard/stakater-reloader-fips:v1.4.12
+ghcr.io/stakater/reloader:v1.4.1 -> cgr.dev/chainguard/stakater-reloader:v1.4.12
+registry.k8s.io/sig-storage/livenessprobe:v2.13.1 -> cgr.dev/chainguard/kubernetes-csi-livenessprobe:v2.17.0
 ```
 
-You can provide a list of images (one image per line) via stdin when the first
+You'll notice that the mapper increments the tag to the closest version
+supported by Chainguard. To benefit from continued CVE remediation, it's
+important, where possible, to use tags that are being actively maintained.
+
+You can also provide a list of images (one image per line) via stdin when the first
 argument is `-`.
 
 ```
 $ cat ./images.txt | ./image-mapper -
 ```
+
+## Options
+
+### Output
 
 Configure the output format with the `-o` flag. Supported formats are: `csv`,
 `json` and `text`.
@@ -35,14 +43,14 @@ $ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 registry.k8s.io/sig-storage/li
   {
     "image": "ghcr.io/stakater/reloader:v1.4.1",
     "results": [
-      "stakater-reloader",
-      "stakater-reloader-fips"
+      "cgr.dev/chainguard/stakater-reloader-fips:v1.4.12",
+      "cgr.dev/chainguard/stakater-reloader:v1.4.12"
     ]
   },
   {
     "image": "registry.k8s.io/sig-storage/livenessprobe:v2.13.1",
     "results": [
-      "kubernetes-csi-livenessprobe"
+      "cgr.dev/chainguard/kubernetes-csi-livenessprobe:v2.17.0"
     ]
   }
 ]
@@ -50,24 +58,28 @@ $ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 registry.k8s.io/sig-storage/li
 
 ```
 $ ./image-mapper ghcr.io/stakater/reloader:v1.4.1 registry.k8s.io/sig-storage/livenessprobe:v2.13.1 -o csv
-ghcr.io/stakater/reloader:v1.4.1,[stakater-reloader stakater-reloader-fips]
-registry.k8s.io/sig-storage/livenessprobe:v2.13.1,[kubernetes-csi-livenessprobe]
+ghcr.io/stakater/reloader:v1.4.1,[cgr.dev/chainguard/stakater-reloader-fips:v1.4.12 cgr.dev/chainguard/stakater-reloader:v1.4.12]
+registry.k8s.io/sig-storage/livenessprobe:v2.13.1,[cgr.dev/chainguard/kubernetes-csi-livenessprobe:v2.17.0]
 ```
+
+### Ignore Tiers (i.e FIPS)
 
 The output will map both FIPS and non-FIPS variants. You can exclude FIPS with
 the `--ignore-tiers` flag.
 
 ```
 $ ./image-mapper prom/prometheus
-prom/prometheus -> prometheus
-prom/prometheus -> prometheus-fips
-prom/prometheus -> prometheus-iamguarded
-prom/prometheus -> prometheus-iamguarded-fips
+prom/prometheus -> cgr.dev/chainguard/prometheus-fips:latest
+prom/prometheus -> cgr.dev/chainguard/prometheus-iamguarded-fips:latest
+prom/prometheus -> cgr.dev/chainguard/prometheus-iamguarded:latest
+prom/prometheus -> cgr.dev/chainguard/prometheus:latest
 
 $ ./image-mapper prom/prometheus --ignore-tiers=FIPS
-prom/prometheus -> prometheus
-prom/prometheus -> prometheus-iamguarded
+prom/prometheus -> cgr.dev/chainguard/prometheus-iamguarded:latest
+prom/prometheus -> cgr.dev/chainguard/prometheus:latest
 ```
+
+### Ignore Iamguarded
 
 The mapper will also return matches for our `-iamguarded` images. These images
 are designed specifically to work with Chainguard's Helm charts. If you aren't
@@ -76,8 +88,8 @@ interested in using our charts, you can exclude those matches with
 
 ```
 $ ./image-mapper prom/prometheus --ignore-iamguarded
-prom/prometheus -> prometheus
-prom/prometheus -> prometheus-fips
+prom/prometheus -> cgr.dev/chainguard/prometheus-fips:latest
+prom/prometheus -> cgr.dev/chainguard/prometheus:latest
 ```
 
 ## Docker
