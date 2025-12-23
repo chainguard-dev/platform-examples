@@ -10,6 +10,7 @@ func TestMatchTag(t *testing.T) {
 		"latest-dev",
 		"3",
 		"3.14",
+		"3.14.1",
 		"3.14.2",
 		"3.13",
 		"3.13.6",
@@ -42,8 +43,13 @@ func TestMatchTag(t *testing.T) {
 		},
 		{
 			name:     "nearest higher patch in same minor",
-			tag:      "3.14.1",
-			expected: "3.14.2",
+			tag:      "3.14.0",
+			expected: "3.14.1",
+		},
+		{
+			name:     "cross-prefix match prefers better semantic version",
+			tag:      "v3.14.1",
+			expected: "3.14.1",
 		},
 		{
 			name:     "nearest higher patch in next minor",
@@ -76,9 +82,9 @@ func TestMatchTag(t *testing.T) {
 			expected: "v3",
 		},
 		{
-			name:     "v-prefix nearest higher patch",
+			name:     "v-prefix cross-prefix match to exact version",
 			tag:      "v3.14.1",
-			expected: "v3.14.2",
+			expected: "3.14.1",
 		},
 		{
 			name:     "v-prefix nearest higher minor",
@@ -152,8 +158,13 @@ func TestMatchTag(t *testing.T) {
 		},
 		{
 			name:     "suffix nearest higher patch in same minor",
-			tag:      "3.14.1-alpine",
-			expected: "3.14.2",
+			tag:      "3.14.0-alpine",
+			expected: "3.14.1",
+		},
+		{
+			name:     "suffix cross-prefix match prefers better semantic version",
+			tag:      "v3.14.1-alpine",
+			expected: "3.14.1",
 		},
 		{
 			name:     "suffix nearest higher patch in next minor",
@@ -171,9 +182,9 @@ func TestMatchTag(t *testing.T) {
 			expected: "3",
 		},
 		{
-			name:     "suffix v-prefix nearest higher patch",
+			name:     "suffix v-prefix cross-prefix match to exact version",
 			tag:      "v3.14.1-alpine",
-			expected: "v3.14.2",
+			expected: "3.14.1",
 		},
 		{
 			name:     "suffix v-prefix nearest higher minor",

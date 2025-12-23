@@ -5,11 +5,11 @@ import (
 	"strconv"
 )
 
-// MatchTag returns the best matching active tag for the input tag. It'll return
+// MatchTag returns the best matching tag for the input tag. It'll return
 // an empty string if it can't find an appropriate match.
-func MatchTag(activeTags []string, tag string) string {
+func MatchTag(tags []string, tag string) string {
 	for _, fn := range matchTagFns {
-		match := fn(activeTags, tag)
+		match := fn(tags, tag)
 		if match == "" {
 			continue
 		}
@@ -20,8 +20,8 @@ func MatchTag(activeTags []string, tag string) string {
 	return ""
 }
 
-// MatchTagFn matches a tag to one of the provided active tags
-type MatchTagFn func(activeTag []string, tag string) string
+// MatchTagFn matches a tag to one of the provided tags
+type MatchTagFn func(tags []string, tag string) string
 
 var matchTagFns = []MatchTagFn{
 	matchEqualTag,
@@ -29,10 +29,10 @@ var matchTagFns = []MatchTagFn{
 }
 
 // matchEqualTag identifies an exact match between the input tag and one of the
-// activeTags
-func matchEqualTag(activeTags []string, tag string) string {
-	for _, activeTag := range activeTags {
-		if activeTag != tag {
+// tags
+func matchEqualTag(tags []string, tag string) string {
+	for _, t := range tags {
+		if t != tag {
 			continue
 		}
 		return tag
@@ -49,7 +49,7 @@ func matchEqualTag(activeTags []string, tag string) string {
 //	2 -> 3
 //	3.7 -> 3.9
 //	3.11.1 -> 3.11.5
-func matchClosestSemanticVersionTag(activeTags []string, tag string) string {
+func matchClosestSemanticVersionTag(tags []string, tag string) string {
 	parsedTag := parseTag(tag)
 	if parsedTag == nil {
 		return ""
@@ -60,34 +60,39 @@ func matchClosestSemanticVersionTag(activeTags []string, tag string) string {
 		bestMatchStr string
 	)
 
-	for _, activeTag := range activeTags {
-		parsedActive := parseTag(activeTag)
-		if parsedActive == nil {
+	for _, t := range tags {
+		parsedT := parseTag(t)
+		if parsedT == nil {
 			continue
 		}
 
 		// Must have same specificity (i.e major, minor, patch)
-		if parsedActive.specificity != parsedTag.specificity {
+		if parsedT.specificity != parsedTag.specificity {
 			continue
 		}
 
-		// Must both have v prefix, or no v prefix
-		if parsedActive.hasV != parsedTag.hasV {
+		// Tag must be >= input tag
+		if parsedT.LessThan(parsedTag) {
 			continue
 		}
 
-		// Active tag must be >= input tag
-		if parsedActive.LessThan(parsedTag) {
-			continue
+		// Compare with current best match
+		if bestMatch != nil {
+			// Naturally, a larger version is a worse match
+			if parsedT.GreaterThan(bestMatch) {
+				continue
+			}
+
+			// For equal matches, prefer tags with the same format.
+			// For instance, if the current best match for v1.2.3 is
+			// 1.2.4, we should prefer v1.2.4.
+			if parsedT.Equals(bestMatch) && !(parsedT.hasV == parsedTag.hasV && bestMatch.hasV != parsedTag.hasV) {
+				continue
+			}
 		}
 
-		// Active tag must be < the current best match we've found
-		if bestMatch != nil && !parsedActive.LessThan(bestMatch) {
-			continue
-		}
-
-		bestMatch = parsedActive
-		bestMatchStr = activeTag
+		bestMatch = parsedT
+		bestMatchStr = t
 
 	}
 
@@ -150,9 +155,19 @@ func parseTag(tag string) *tagVersion {
 	return tv
 }
 
+// Equals tests whether this tag is equal to the provided one
+func (tv *tagVersion) Equals(other *tagVersion) bool {
+	return tv.compare(other) == 0
+}
+
 // LessThan tests whether this tag is less than the provided one
 func (tv *tagVersion) LessThan(other *tagVersion) bool {
-	return other != nil && tv.compare(other) < 0
+	return tv.compare(other) < 0
+}
+
+// GreaterThan tests whether this tag is greater than the provided one
+func (tv *tagVersion) GreaterThan(other *tagVersion) bool {
+	return tv.compare(other) > 0
 }
 
 // compare returns -1 if tv < other, 0 if equal, 1 if tv > other

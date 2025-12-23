@@ -1,0 +1,16 @@
+apiVersion: v2
+appVersion: 1.0.0
+description: A generic test subchart used for testing purposes
+home: https://example.com
+icon: https://example.com/icon.png
+keywords:
+- test
+- subchart
+- example
+maintainers:
+- email: test@example.com
+  name: example
+name: test-subchart
+sources:
+- https://example.com/test-subchart
+version: 1.0.0

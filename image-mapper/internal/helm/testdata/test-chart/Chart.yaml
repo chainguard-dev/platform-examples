@@ -1,0 +1,21 @@
+apiVersion: v2
+appVersion: 1.0.0
+dependencies:
+- condition: test-subchart.enabled
+  name: test-subchart
+  repository: https://example.com/charts
+  version: 1.0.0
+description: A generic test Helm chart used for testing purposes
+home: https://example.com
+icon: https://example.com/icon.png
+keywords:
+- test
+- example
+kubeVersion: '>=1.25.0-0'
+maintainers:
+- name: example
+  url: https://example.com
+name: test-chart
+sources:
+- https://example.com/test-chart
+version: 1.0.0

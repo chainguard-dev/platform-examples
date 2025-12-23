@@ -1,0 +1,61 @@
+# Generic test chart values
+
+# Global configuration
+global:
+  # Main application image
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: ""
+    imagePullPolicy: IfNotPresent
+
+# Authentication service configuration
+dex:
+  image:
+    repository: ghcr.io/dexidp/dex
+    tag: v2.44.0
+
+# Cache/database configuration
+redis:
+  image:
+    repository: ecr-public.aws.com/docker/library/redis
+    tag: 8.2.2-alpine
+  exporter:
+    image:
+      repository: ghcr.io/oliver006/redis_exporter
+      tag: v1.80.1
+
+# Server configuration
+server:
+  extensions:
+    image:
+      repository: quay.io/argoprojlabs/argocd-extension-installer
+      tag: v0.0.9
+
+# Subchart configuration
+test-subchart:
+  enabled: true
+  image:
+    repository: ecr-public.aws.com/docker/library/redis
+    tag: 8.2.1-alpine
+    pullPolicy: IfNotPresent
+  configmapTest:
+    image:
+      repository: koalaman/shellcheck
+      tag: v0.10.0
+  haproxy:
+    enabled: false
+    image:
+      repository: ecr-public.aws.com/docker/library/haproxy
+      tag: 3.0.8-alpine
+      pullPolicy: IfNotPresent
+  sysctlImage:
+    enabled: false
+    registry: public.ecr.aws/docker/library
+    repository: busybox
+    tag: 1.34.1
+    pullPolicy: Always
+  exporter:
+    enabled: false
+    image: ghcr.io/oliver006/redis_exporter
+    tag: v1.75.0
+    pullPolicy: IfNotPresent

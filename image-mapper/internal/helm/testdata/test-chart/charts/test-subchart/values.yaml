@@ -1,0 +1,42 @@
+# Generic test subchart values
+
+# Main image configuration
+image:
+  repository: ecr-public.aws.com/docker/library/redis
+  tag: 8.2.1-alpine
+  pullPolicy: IfNotPresent
+
+# Config validation test settings
+configmapTest:
+  image:
+    repository: koalaman/shellcheck
+    tag: v0.10.0
+  resources: {}
+
+# Proxy configuration
+haproxy:
+  enabled: false
+  replicas: 3
+  image:
+    repository: ecr-public.aws.com/docker/library/haproxy
+    tag: 3.0.8-alpine
+    pullPolicy: IfNotPresent
+  resources: {}
+
+# System control image
+sysctlImage:
+  enabled: false
+  registry: public.ecr.aws/docker/library
+  repository: busybox
+  tag: 1.34.1
+  pullPolicy: Always
+  resources: {}
+
+# Metrics exporter configuration
+exporter:
+  enabled: false
+  image: ghcr.io/oliver006/redis_exporter
+  tag: v1.75.0
+  pullPolicy: IfNotPresent
+  port: 9121
+  resources: {}
