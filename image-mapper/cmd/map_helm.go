@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -38,14 +37,12 @@ func MapHelmChartCommand() *cobra.Command {
 `,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-
 			chart := helm.ChartDescriptor{
 				Name:       args[0],
 				Repository: opts.ChartRepo,
 				Version:    opts.ChartVersion,
 			}
-			output, err := helm.MapChart(ctx, chart, mapper.WithRepository(opts.Repo))
+			output, err := helm.MapChart(cmd.Context(), chart, mapper.WithRepository(opts.Repo))
 			if err != nil {
 				return fmt.Errorf("mapping values: %w", err)
 			}
@@ -85,8 +82,6 @@ func MapHelmValuesCommand() *cobra.Command {
 `,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-
 			var (
 				input []byte
 				err   error
@@ -104,7 +99,7 @@ func MapHelmValuesCommand() *cobra.Command {
 				}
 			}
 
-			output, err := helm.MapValues(ctx, input, mapper.WithRepository(opts.Repo))
+			output, err := helm.MapValues(cmd.Context(), input, mapper.WithRepository(opts.Repo))
 			if err != nil {
 				return fmt.Errorf("mapping values: %w", err)
 			}

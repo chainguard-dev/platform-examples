@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -27,8 +26,6 @@ func MapCommand() *cobra.Command {
 		Short: "Map upstream image references to Chainguard images.",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-
 			output, err := mapper.NewOutput(opts.OutputFormat)
 			if err != nil {
 				return fmt.Errorf("constructing output: %w", err)
@@ -41,7 +38,7 @@ func MapCommand() *cobra.Command {
 			if opts.IgnoreIamguarded {
 				ignoreFns = append(ignoreFns, mapper.IgnoreIamguarded())
 			}
-			m, err := mapper.NewMapper(ctx, mapper.WithRepository(opts.Repo), mapper.WithIgnoreFns(ignoreFns...))
+			m, err := mapper.NewMapper(cmd.Context(), mapper.WithRepository(opts.Repo), mapper.WithIgnoreFns(ignoreFns...))
 			if err != nil {
 				return fmt.Errorf("creating mapper: %w", err)
 			}
