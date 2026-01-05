@@ -91,7 +91,7 @@ func TestMapperMap(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := &Mapper{
+			m := &mapper{
 				repos:     tc.repos,
 				repoName:  "cgr.dev/chainguard",
 				ignoreFns: []IgnoreFn{IgnoreTiers([]string{"fips"})},
@@ -115,7 +115,7 @@ func TestMapperMap(t *testing.T) {
 }
 
 func TestMapperMapInvalidImage(t *testing.T) {
-	m := &Mapper{
+	m := &mapper{
 		repos: []Repo{},
 	}
 
@@ -139,7 +139,7 @@ func TestMapperMapAll(t *testing.T) {
 		},
 	}
 
-	m := &Mapper{
+	m := &mapper{
 		repos:    repos,
 		repoName: "cgr.dev/chainguard",
 	}
@@ -186,7 +186,7 @@ func TestMapperMapAllDuplicates(t *testing.T) {
 		},
 	}
 
-	m := &Mapper{
+	m := &mapper{
 		repos:    repos,
 		repoName: "cgr.dev/chainguard",
 	}
@@ -227,7 +227,7 @@ func TestMapperMapAllDuplicates(t *testing.T) {
 }
 
 func TestMapperMapAllIteratorError(t *testing.T) {
-	m := &Mapper{
+	m := &mapper{
 		repos: []Repo{},
 	}
 	expectedErr := errors.New("iterator error")
@@ -240,7 +240,7 @@ func TestMapperMapAllIteratorError(t *testing.T) {
 }
 
 func TestMapperMapAllMapError(t *testing.T) {
-	m := &Mapper{
+	m := &mapper{
 		repos: []Repo{},
 	}
 
@@ -494,7 +494,7 @@ func TestMapperMapWithCustomIgnoreFn(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := &Mapper{
+			m := &mapper{
 				repos:     tc.repos,
 				repoName:  "cgr.dev/chainguard",
 				ignoreFns: tc.ignoreFns,
@@ -545,7 +545,7 @@ func TestMapperMapWithCustomIgnoreFnUsingAliases(t *testing.T) {
 		return false
 	}
 
-	m := &Mapper{
+	m := &mapper{
 		repos:     repos,
 		repoName:  "cgr.dev/chainguard",
 		ignoreFns: []IgnoreFn{ignoreFn},
@@ -601,7 +601,7 @@ func TestMapperMapWithNoIgnoreFns(t *testing.T) {
 		},
 	}
 
-	m := &Mapper{
+	m := &mapper{
 		repos:     repos,
 		repoName:  "cgr.dev/chainguard",
 		ignoreFns: []IgnoreFn{}, // No ignore functions
@@ -625,6 +625,128 @@ func TestMapperMapWithNoIgnoreFns(t *testing.T) {
 	if diff := cmp.Diff(expected, result, opts); diff != "" {
 		t.Errorf("mapping mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func TestMapImage(t *testing.T) {
+	testCases := []struct {
+		name          string
+		image         string
+		repos         []Repo
+		expectedImage string
+		expectError   bool
+	}{
+		{
+			name:  "successful mapping with result",
+			image: "nginx",
+			repos: []Repo{
+				{
+					Name:        "nginx",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+			},
+			expectedImage: "cgr.dev/chainguard/nginx",
+			expectError:   false,
+		},
+		{
+			name:  "no results found",
+			image: "nonexistent",
+			repos: []Repo{
+				{
+					Name:        "redis",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+			},
+			expectError: true,
+		},
+		{
+			name:  "multiple results returns first",
+			image: "nginx",
+			repos: []Repo{
+				{
+					Name:        "nginx",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{},
+				},
+				{
+					Name:        "nginx-custom",
+					CatalogTier: "APPLICATION",
+					Aliases:     []string{"nginx"},
+				},
+			},
+			expectedImage: "cgr.dev/chainguard/nginx",
+			expectError:   false,
+		},
+		{
+			name:  "image with tag",
+			image: "nginx:1.25",
+			repos: []Repo{
+				{
+					Name:        "nginx",
+					CatalogTier: "APPLICATION",
+					ActiveTags:  []string{"latest", "1.25", "1.26"},
+					Aliases:     []string{},
+				},
+			},
+			expectedImage: "cgr.dev/chainguard/nginx:1.25",
+			expectError:   false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := &mapper{
+				repos:    tc.repos,
+				repoName: "cgr.dev/chainguard",
+			}
+
+			result, err := MapImage(m, tc.image)
+
+			if tc.expectError {
+				if err == nil {
+					t.Error("expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if result.String() != tc.expectedImage {
+				t.Errorf("expected %s, got %s", tc.expectedImage, result.String())
+			}
+		})
+	}
+}
+
+func TestMapImageInvalidImage(t *testing.T) {
+	m := &mapper{
+		repos: []Repo{},
+	}
+
+	_, err := MapImage(m, "invalid::image")
+	if err == nil {
+		t.Error("expected error for invalid image reference")
+	}
+}
+
+func TestMapImageMapperError(t *testing.T) {
+	m := &errorMapper{err: errors.New("mapper error")}
+
+	_, err := MapImage(m, "nginx")
+	if err == nil {
+		t.Error("expected error from mapper")
+	}
+}
+
+type errorMapper struct {
+	err error
+}
+
+func (m *errorMapper) Map(image string) (*Mapping, error) {
+	return nil, m.err
 }
 
 func TestMapperIntegration(t *testing.T) {
@@ -679,6 +801,10 @@ func TestMapperIntegration(t *testing.T) {
 			"cgr.dev/chainguard/crossplane-aws-eks",
 			"cgr.dev/chainguard/crossplane-aws-eks-fips",
 		},
+		"ghcr.io/crossplane-contrib/provider-aws-elasticache:v1.20.1": {
+			"cgr.dev/chainguard/crossplane-aws-elasticache",
+			"cgr.dev/chainguard/crossplane-aws-elasticache-fips",
+		},
 		"ghcr.io/crossplane-contrib/provider-aws-firehose:v1.20.1": {
 			"cgr.dev/chainguard/crossplane-aws-firehose",
 			"cgr.dev/chainguard/crossplane-aws-firehose-fips",
@@ -698,6 +824,10 @@ func TestMapperIntegration(t *testing.T) {
 		"ghcr.io/crossplane-contrib/provider-aws-lambda:v1.20.1": {
 			"cgr.dev/chainguard/crossplane-aws-lambda",
 			"cgr.dev/chainguard/crossplane-aws-lambda-fips",
+		},
+		"ghcr.io/crossplane-contrib/provider-aws-memorydb:v1.20.1": {
+			"cgr.dev/chainguard/crossplane-aws-memorydb",
+			"cgr.dev/chainguard/crossplane-aws-memorydb-fips",
 		},
 		"ghcr.io/crossplane-contrib/provider-aws-rds:v1.20.1": {
 			"cgr.dev/chainguard/crossplane-aws-rds",
@@ -799,8 +929,6 @@ func TestMapperIntegration(t *testing.T) {
 			"cgr.dev/chainguard/argocd-fips",
 			"cgr.dev/chainguard/argocd-iamguarded",
 			"cgr.dev/chainguard/argocd-iamguarded-fips",
-			"cgr.dev/chainguard/argocd-repo-server",
-			"cgr.dev/chainguard/argocd-repo-server-fips",
 		},
 		"quay.io/argoproj/argocli:latest": {
 			"cgr.dev/chainguard/argo-cli",
