@@ -21,10 +21,10 @@ type Mapper interface {
 }
 
 type mapper struct {
-	repos       []Repo
-	ignoreFns   []IgnoreFn
-	includeTags []TagFilter
-	repoName    string
+	repos      []Repo
+	ignoreFns  []IgnoreFn
+	tagFilters []TagFilter
+	repoName   string
 }
 
 // NewMapper creates a new mapper
@@ -47,10 +47,10 @@ func NewMapper(ctx context.Context, opts ...Option) (*mapper, error) {
 	}
 
 	m := &mapper{
-		repos:       repos,
-		ignoreFns:   o.ignoreFns,
-		includeTags: o.includeTags,
-		repoName:    repoName,
+		repos:      repos,
+		ignoreFns:  o.ignoreFns,
+		tagFilters: o.tagFilters,
+		repoName:   repoName,
 	}
 
 	return m, nil
@@ -119,13 +119,8 @@ func (m *mapper) Map(image string) (*Mapping, error) {
 		// Append the repository name to the rest of the reference
 		result := fmt.Sprintf("%s/%s", m.repoName, cgrrepo.Name)
 
-		// Only match active tags unless we've fetched the full list of
-		// tags
-		tags := cgrrepo.ActiveTags
-		if len(cgrrepo.Tags) > 0 {
-			tags = flattenTags(cgrrepo.Tags)
-		}
-		tags = includeTags(tags, m.includeTags...)
+		// Filter the tags based on the configured filters
+		tags := filterTags(cgrrepo, m.tagFilters...)
 
 		// Try and match the provided tag to one of the tags
 		tag := MatchTag(tags, ref.TagStr())

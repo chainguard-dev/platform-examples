@@ -907,6 +907,7 @@ func TestMapperIntegration(t *testing.T) {
 		},
 		"opensearchproject/opensearch-operator:2.7.0": {
 			"cgr.dev/chainguard/opensearch-k8s-operator",
+			"cgr.dev/chainguard/opensearch-k8s-operator-fips",
 		},
 		"opensearchproject/opensearch:2.19.1": {
 			"cgr.dev/chainguard/opensearch",

@@ -1,4 +1,4 @@
-package helm
+package dockerfile
 
 import (
 	"context"
@@ -10,23 +10,17 @@ import (
 // in Helm charts and values
 func NewMapper(ctx context.Context, opts ...mapper.Option) (mapper.Mapper, error) {
 	defaultOpts := []mapper.Option{
-		// Helm charts are designed to work with
-		// specific versions. We include inactive tags
-		// here so we can match to the closest
-		// version.
-		mapper.WithInactiveTags(true),
 		mapper.WithIgnoreFns(
-			// Iamguarded images are designed to be
+			// Iamguarded images are only designed to be
 			// used with our Helm charts.
 			mapper.IgnoreIamguarded(),
 			// TODO: make it possible select only
 			// FIPS images
 			mapper.IgnoreTiers([]string{"FIPS"}),
 		),
-		// Our non-dev tags *should* be able to be
-		// dropped into upstream helm
-		// charts, so let's exclude them.
-		mapper.WithTagFilters(mapper.TagFilterExcludeDev),
+		// Use -dev tags because they're more likely to work out of the
+		// box
+		mapper.WithTagFilters(mapper.TagFilterPreferDev),
 	}
 
 	return mapper.NewMapper(ctx, append(defaultOpts, opts...)...)

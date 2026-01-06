@@ -63,6 +63,7 @@ func MapCommand() *cobra.Command {
 	rootCmd.Flags().StringVar(&opts.Repo, "repository", "cgr.dev/chainguard", "Modifies the repository URI in the mappings. For instance, registry.internal.dev/chainguard would result in registry.internal.dev/chainguard/<image> in the output.")
 
 	cmd.AddCommand(
+		MapDockerfileCommand(),
 		MapHelmChartCommand(),
 		MapHelmValuesCommand(),
 	)
