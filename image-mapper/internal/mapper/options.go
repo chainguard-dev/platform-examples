@@ -7,7 +7,7 @@ type options struct {
 	ignoreFns    []IgnoreFn
 	repo         string
 	inactiveTags bool
-	includeTags  []TagFilter
+	tagFilters   []TagFilter
 }
 
 // WithIgnoreFns is a functional option that configures the IgnoreFns used by
@@ -26,11 +26,11 @@ func WithRepository(repo string) Option {
 	}
 }
 
-// WithIncludeTags is a functional option that configures filters that define
-// which tags to include when matching tags
-func WithIncludeTags(includeTags ...TagFilter) Option {
+// WithTagFilters is a functional option that configures tag filters to apply to
+// matches
+func WithTagFilters(tagFilters ...TagFilter) Option {
 	return func(o *options) {
-		o.includeTags = includeTags
+		o.tagFilters = tagFilters
 	}
 }
 

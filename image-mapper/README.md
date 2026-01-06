@@ -52,6 +52,32 @@ important, where possible, to use tags that are being actively maintained.
 
 Refer to [this page](./docs/map.md) for more details.
 
+### Dockerfile
+
+The `dockerfile` subcommand maps image references in a Dockerfile to Chainguard.
+
+```
+$ cat Dockerfile
+FROM python:3.13
+
+WORKDIR /app
+
+COPY run.py run.py
+
+ENTRYPOINT ["python", "/app/run.py"]
+
+$ ./image-mapper map dockerfile Dockerfile
+FROM cgr.dev/chainguard/python:3.13-dev
+
+WORKDIR /app
+
+COPY run.py run.py
+
+ENTRYPOINT ["python", "/app/run.py"]
+```
+
+Refer to [this page](./docs/map_dockerfile.md) for more details.
+
 ### Helm
 
 The `helm-chart` and `helm-values` subcommands extract image related values and

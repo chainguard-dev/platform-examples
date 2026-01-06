@@ -2,114 +2,168 @@ package mapper
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 )
 
-func TestIncludeTags(t *testing.T) {
-	tags := []string{"latest", "v1.0.0", "v2.0.0", "dev", "prod", "staging"}
-
+func TestTagFilterExcludeDev(t *testing.T) {
 	tests := []struct {
 		name     string
 		tags     []string
-		filters  []TagFilter
 		expected []string
 	}{
 		{
-			name:     "no filters returns all tags",
-			tags:     tags,
-			filters:  nil,
-			expected: tags,
-		},
-		{
-			name:     "empty filters returns all tags",
-			tags:     tags,
-			filters:  []TagFilter{},
-			expected: tags,
-		},
-		{
-			name: "single filter includes matching tags",
-			tags: tags,
-			filters: []TagFilter{
-				func(tag string) bool { return strings.HasPrefix(tag, "v") },
-			},
-			expected: []string{"v1.0.0", "v2.0.0"},
-		},
-		{
-			name: "multiple filters use OR logic",
-			tags: tags,
-			filters: []TagFilter{
-				func(tag string) bool { return strings.HasPrefix(tag, "v") },
-				func(tag string) bool { return tag == "dev" },
-			},
-			expected: []string{"v1.0.0", "v2.0.0", "dev"},
-		},
-		{
-			name: "no tags match filters",
-			tags: tags,
-			filters: []TagFilter{
-				func(tag string) bool { return strings.HasPrefix(tag, "nonexistent") },
-			},
+			name:     "empty tags",
+			tags:     []string{},
 			expected: nil,
 		},
 		{
-			name: "empty tags slice",
-			tags: []string{},
-			filters: []TagFilter{
-				func(tag string) bool { return true },
-			},
+			name:     "no dev tags",
+			tags:     []string{"v1.0.0", "v2.0.0", "latest"},
+			expected: []string{"v1.0.0", "v2.0.0", "latest"},
+		},
+		{
+			name:     "all dev tags",
+			tags:     []string{"v1.0.0-dev", "v2.0.0-dev", "latest-dev"},
 			expected: nil,
 		},
 		{
-			name: "filter returns true for all",
-			tags: tags,
-			filters: []TagFilter{
-				func(tag string) bool { return true },
-			},
-			expected: tags,
+			name:     "mixed dev and non-dev tags",
+			tags:     []string{"v1.0.0", "v1.0.0-dev", "v2.0.0", "v2.0.0-dev", "latest"},
+			expected: []string{"v1.0.0", "v2.0.0", "latest"},
 		},
 		{
-			name: "filter returns false for all",
-			tags: tags,
-			filters: []TagFilter{
-				func(tag string) bool { return false },
-			},
+			name:     "tag containing dev but not ending with -dev",
+			tags:     []string{"development", "v1.0.0-dev", "devops"},
+			expected: []string{"development", "devops"},
+		},
+		{
+			name:     "single dev tag",
+			tags:     []string{"v1.0.0-dev"},
 			expected: nil,
 		},
 		{
-			name: "three filters with different matches",
-			tags: []string{"alpha", "beta", "gamma", "delta"},
-			filters: []TagFilter{
-				func(tag string) bool { return tag == "alpha" },
-				func(tag string) bool { return tag == "gamma" },
-				func(tag string) bool { return strings.Contains(tag, "et") },
-			},
-			expected: []string{"alpha", "beta", "gamma"},
+			name:     "single non-dev tag",
+			tags:     []string{"v1.0.0"},
+			expected: []string{"v1.0.0"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := TagFilterExcludeDev(tt.tags)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("TagFilterExcludeDev() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestTagFilterIncludeDev(t *testing.T) {
+	tests := []struct {
+		name     string
+		tags     []string
+		expected []string
+	}{
+		{
+			name:     "empty tags",
+			tags:     []string{},
+			expected: nil,
 		},
 		{
-			name: "filter by tag length",
-			tags: []string{"a", "ab", "abc", "abcd"},
-			filters: []TagFilter{
-				func(tag string) bool { return len(tag) > 2 },
-			},
-			expected: []string{"abc", "abcd"},
+			name:     "no dev tags",
+			tags:     []string{"v1.0.0", "v2.0.0", "latest"},
+			expected: nil,
 		},
 		{
-			name: "multiple filters where none match",
-			tags: tags,
-			filters: []TagFilter{
-				func(tag string) bool { return strings.HasPrefix(tag, "x") },
-				func(tag string) bool { return strings.HasPrefix(tag, "y") },
-			},
+			name:     "all dev tags",
+			tags:     []string{"v1.0.0-dev", "v2.0.0-dev", "latest-dev"},
+			expected: []string{"v1.0.0-dev", "v2.0.0-dev", "latest-dev"},
+		},
+		{
+			name:     "mixed dev and non-dev tags",
+			tags:     []string{"v1.0.0", "v1.0.0-dev", "v2.0.0", "v2.0.0-dev", "latest"},
+			expected: []string{"v1.0.0-dev", "v2.0.0-dev"},
+		},
+		{
+			name:     "tag containing dev but not ending with -dev",
+			tags:     []string{"development", "v1.0.0-dev", "devops"},
+			expected: []string{"v1.0.0-dev"},
+		},
+		{
+			name:     "single dev tag",
+			tags:     []string{"v1.0.0-dev"},
+			expected: []string{"v1.0.0-dev"},
+		},
+		{
+			name:     "single non-dev tag",
+			tags:     []string{"v1.0.0"},
 			expected: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := includeTags(tt.tags, tt.filters...)
+			result := TagFilterIncludeDev(tt.tags)
 			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("includeTags() = %v, expected %v", result, tt.expected)
+				t.Errorf("TagFilterIncludeDev() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestTagFilterPreferDev(t *testing.T) {
+	tests := []struct {
+		name     string
+		tags     []string
+		expected []string
+	}{
+		{
+			name:     "empty tags",
+			tags:     []string{},
+			expected: []string{},
+		},
+		{
+			name:     "no dev tags returns all tags",
+			tags:     []string{"v1.0.0", "v2.0.0", "latest"},
+			expected: []string{"v1.0.0", "v2.0.0", "latest"},
+		},
+		{
+			name:     "all dev tags returns all tags",
+			tags:     []string{"v1.0.0-dev", "v2.0.0-dev", "latest-dev"},
+			expected: []string{"v1.0.0-dev", "v2.0.0-dev", "latest-dev"},
+		},
+		{
+			name:     "mixed dev and non-dev tags returns only dev tags",
+			tags:     []string{"v1.0.0", "v1.0.0-dev", "v2.0.0", "v2.0.0-dev", "latest"},
+			expected: []string{"v1.0.0-dev", "v2.0.0-dev"},
+		},
+		{
+			name:     "tag containing dev but not ending with -dev returns all",
+			tags:     []string{"development", "devops", "production"},
+			expected: []string{"development", "devops", "production"},
+		},
+		{
+			name:     "single dev tag returns only dev tag",
+			tags:     []string{"v1.0.0-dev"},
+			expected: []string{"v1.0.0-dev"},
+		},
+		{
+			name:     "single non-dev tag returns that tag",
+			tags:     []string{"v1.0.0"},
+			expected: []string{"v1.0.0"},
+		},
+		{
+			name:     "one dev tag among many non-dev returns only dev",
+			tags:     []string{"v1.0.0", "v2.0.0", "v3.0.0-dev", "v4.0.0", "latest"},
+			expected: []string{"v3.0.0-dev"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := TagFilterPreferDev(tt.tags)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("TagFilterPreferDev() = %v, expected %v", result, tt.expected)
 			}
 		})
 	}
