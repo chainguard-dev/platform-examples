@@ -1,4 +1,4 @@
-module github.com/ribbybibby/platform-examples/create-repo
+module github.com/chainguard-dev/platform-examples/create-repo
 
 go 1.25.0
 
