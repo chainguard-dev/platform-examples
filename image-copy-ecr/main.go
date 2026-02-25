@@ -17,6 +17,7 @@ import (
 	"chainguard.dev/sdk/auth/aws"
 	cgevents "chainguard.dev/sdk/events"
 	"chainguard.dev/sdk/events/registry"
+	iam "chainguard.dev/sdk/proto/platform/iam/v1"
 	v1 "chainguard.dev/sdk/proto/platform/registry/v1"
 	"chainguard.dev/sdk/sts"
 	"github.com/aws/aws-lambda-go/events"
@@ -176,24 +177,59 @@ func resolveRepositoryName(ctx context.Context, repoID string) (string, error) {
 		return "", fmt.Errorf("getting token: %w", err)
 	}
 
-	// Create client that uses the token
-	client, err := v1.NewClients(ctx, env.APIEndpoint, tok.AccessToken)
+	// Create clients that uses the token
+	regc, err := v1.NewClients(ctx, env.APIEndpoint, tok.AccessToken)
 	if err != nil {
-		return "", fmt.Errorf("creating clients: %w", err)
+		return "", fmt.Errorf("creating registry clients: %w", err)
+	}
+	iamc, err := iam.NewClients(ctx, env.APIEndpoint, tok.AccessToken)
+	if err != nil {
+		return "", fmt.Errorf("creating group clients: %w", err)
 	}
 
-	// Lookup the repository name from the ID
-	repoList, err := client.Registry().ListRepos(ctx, &v1.RepoFilter{
-		Id: repoID,
-	})
-	if err != nil {
-		return "", fmt.Errorf("listing repositories: %w", err)
-	}
-	for _, repo := range repoList.Items {
-		return repo.Name, nil
+	// Look up the name for each subrepository. This supports nested repos
+	// like charts/cert-manager.
+	var path []string
+	parts := strings.Split(repoID, "/")
+	for i := 1; i < len(parts); i++ {
+		id := strings.Join(parts[:i+1], "/")
+
+		// Each element in the path may be a 'repo' or a 'group', so we
+		// need to try both.
+		var name string
+		groupList, err := iamc.Groups().List(ctx, &iam.GroupFilter{
+			Id: id,
+		})
+		if err != nil {
+			return "", fmt.Errorf("listing groups for %s: %w", id, err)
+		}
+		for _, group := range groupList.Items {
+			name = group.Name
+			break
+		}
+		if name == "" {
+			repoList, err := regc.Registry().ListRepos(ctx, &v1.RepoFilter{
+				Id: id,
+			})
+			if err != nil {
+				return "", fmt.Errorf("listing repositories for %s: %w", id, err)
+			}
+			for _, repo := range repoList.Items {
+				name = repo.Name
+				break
+			}
+		}
+		if name == "" {
+			return "", fmt.Errorf("couldn't find repository or group name for id: %s", id)
+		}
+		path = append(path, name)
 	}
 
-	return "", fmt.Errorf("couldn't find repository name for id: %s", repoID)
+	if len(path) == 0 {
+		return "", fmt.Errorf("couldn't find full repository name for id: %s", repoID)
+	}
+
+	return strings.Join(path, "/"), nil
 }
 
 // newToken generates a token using the AWS identity of the Lambda function.
